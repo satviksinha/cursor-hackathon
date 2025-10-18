@@ -1,29 +1,41 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Send,
-  Mic,
-  MicOff,
-  Video,
-  VideoOff,
   Loader2,
   MessageCircle,
+  User,
+  Brain,
+  Search,
+  Settings,
+  BarChart3,
+  RefreshCw,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-// Removed socket.io-client import - using native WebSocket instead
+import { api } from "@/lib/api";
 
 interface Message {
   id: string;
   text: string;
   isUser: boolean;
   timestamp: Date;
-  videoData?: string;
-  audioData?: string;
-  audioChunks?: string[];
-  isAudioComplete?: boolean;
+  searchResults?: any[];
+  personalityContext?: string;
+}
+
+interface PersonalityProfile {
+  user_id: string;
+  profile: {
+    openness: number;
+    conscientiousness: number;
+    extraversion: number;
+    agreeableness: number;
+    neuroticism: number;
+  };
+  timestamp: string;
 }
 
 export default function ChatPage({ params }: { params: { userId: string } }) {
@@ -31,304 +43,230 @@ export default function ChatPage({ params }: { params: { userId: string } }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isVideoEnabled, setIsVideoEnabled] = useState(true);
-  const [isRecording, setIsRecording] = useState(false);
+  const [personalityProfile, setPersonalityProfile] =
+    useState<PersonalityProfile | null>(null);
+  const [showPersonalitySidebar, setShowPersonalitySidebar] = useState(false);
+  const [includeSearch, setIncludeSearch] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const socketRef = useRef<any>(null);
 
   useEffect(() => {
-    // Initialize native WebSocket connection
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
-    const wsPath = `${wsUrl}/ws/${params.userId}`;
+    fetchPersonalityProfile();
+    // Add initial greeting
+    setTimeout(() => {
+      addMessage(
+        "Hello! I'm your AI assistant. To provide you with personalized responses, please complete the personality assessment first. You can do this by clicking the settings button above.",
+        false
+      );
+    }, 1000);
+  }, []);
 
-    socketRef.current = new WebSocket(wsPath);
-
-    socketRef.current.onopen = () => {
-      setIsConnected(true);
-      toast.success("Connected to your marionette!");
-
-      // Send initial greeting
-      setTimeout(() => {
-        sendMessage("Hello! Can you introduce yourself?");
-      }, 1000);
-    };
-
-    socketRef.current.onclose = () => {
-      setIsConnected(false);
-      toast.error("Disconnected from marionette");
-    };
-
-    socketRef.current.onerror = (error: Event) => {
-      console.error("WebSocket error:", error);
-      toast.error("Connection error");
-      setIsConnected(false);
-    };
-
-    socketRef.current.onmessage = (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log("Received WebSocket message:", data.type);
-
-        if (data.type === "text_chunk") {
-          // Handle streaming text
-          setMessages((prev) => {
-            const lastMessage = prev[prev.length - 1];
-            if (lastMessage && !lastMessage.isUser) {
-              // Update existing message
-              return prev.map((msg, index) =>
-                index === prev.length - 1
-                  ? { ...msg, text: msg.text + data.content }
-                  : msg
-              );
-            } else {
-              // Create new message
-              return [
-                ...prev,
-                {
-                  id: Date.now().toString(),
-                  text: data.content,
-                  isUser: false,
-                  timestamp: new Date(),
-                },
-              ];
-            }
-          });
-        } else if (data.type === "video") {
-          // Handle video data
-          setMessages((prev) => {
-            const lastMessage = prev[prev.length - 1];
-            if (lastMessage && !lastMessage.isUser) {
-              return prev.map((msg, index) =>
-                index === prev.length - 1
-                  ? { ...msg, videoData: data.data }
-                  : msg
-              );
-            }
-            return prev;
-          });
-        } else if (data.type === "audio") {
-          // Handle complete audio data
-          console.log(
-            "Received complete audio:",
-            data.data.length,
-            "characters"
-          );
-          setMessages((prev) => {
-            const lastMessage = prev[prev.length - 1];
-            if (lastMessage && !lastMessage.isUser) {
-              return prev.map((msg, index) =>
-                index === prev.length - 1
-                  ? { ...msg, audioData: data.data }
-                  : msg
-              );
-            }
-            return prev;
-          });
-        } else if (data.type === "audio_chunk") {
-          // Handle streaming audio chunks
-          console.log("Received audio chunk:", data.data.length, "characters");
-          setMessages((prev) => {
-            const lastMessage = prev[prev.length - 1];
-            if (lastMessage && !lastMessage.isUser) {
-              const currentChunks = lastMessage.audioChunks || [];
-              const newChunks = [...currentChunks, data.data];
-              console.log("Total chunks so far:", newChunks.length);
-              return prev.map((msg, index) =>
-                index === prev.length - 1
-                  ? { ...msg, audioChunks: newChunks }
-                  : msg
-              );
-            }
-            return prev;
-          });
-        } else if (data.type === "audio_complete") {
-          // Handle audio completion - properly combine base64 chunks
-          setMessages((prev) => {
-            const lastMessage = prev[prev.length - 1];
-            if (lastMessage && !lastMessage.isUser && lastMessage.audioChunks) {
-              try {
-                // Convert base64 chunks to binary, concatenate, then back to base64
-                const binaryChunks = lastMessage.audioChunks.map((chunk) =>
-                  Uint8Array.from(atob(chunk), (c) => c.charCodeAt(0))
-                );
-
-                // Calculate total length
-                const totalLength = binaryChunks.reduce(
-                  (sum, chunk) => sum + chunk.length,
-                  0
-                );
-
-                // Create combined binary data
-                const combinedBinary = new Uint8Array(totalLength);
-                let offset = 0;
-                for (const chunk of binaryChunks) {
-                  combinedBinary.set(chunk, offset);
-                  offset += chunk.length;
-                }
-
-                // Convert back to base64
-                const combinedAudio = btoa(
-                  String.fromCharCode(...combinedBinary)
-                );
-
-                console.log(
-                  "Audio complete, chunks:",
-                  lastMessage.audioChunks.length,
-                  "combined length:",
-                  combinedAudio.length
-                );
-
-                return prev.map((msg, index) =>
-                  index === prev.length - 1
-                    ? {
-                        ...msg,
-                        isAudioComplete: true,
-                        audioData: combinedAudio,
-                      }
-                    : msg
-                );
-              } catch (error) {
-                console.error("Error combining audio chunks:", error);
-                return prev;
-              }
-            }
-            return prev;
-          });
-        } else if (data.type === "error") {
-          toast.error(data.message);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
+  // Refresh profile when component becomes visible (e.g., returning from assessment)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchPersonalityProfile();
       }
     };
 
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.close();
-      }
-    };
-  }, [params.userId]);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sendMessage = async (text: string) => {
-    if (!text.trim() || isLoading) return;
+  const fetchPersonalityProfile = async () => {
+    try {
+      const response = await api.getPersonalityProfile(params.userId);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === "success") {
+          setPersonalityProfile(data.profile);
+          // Update greeting if this is the first time we found a profile
+          if (messages.length === 1) {
+            // Replace the first message with a new personalized greeting
+            setMessages((prev) => [
+              {
+                id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                text: "Hello! I'm your personalized AI assistant. I've learned about your personality and I'm here to help you in a way that matches your unique traits. What would you like to explore today?",
+                isUser: false,
+                timestamp: new Date(),
+                searchResults: undefined,
+                personalityContext: undefined,
+              },
+              ...prev.slice(1),
+            ]);
+          }
+        }
+      } else if (response.status === 404) {
+        // Profile doesn't exist yet - user needs to complete assessment
+        console.log(
+          "No personality profile found - user needs to complete assessment"
+        );
+        setPersonalityProfile(null);
+      }
+    } catch (error) {
+      console.error("Failed to fetch personality profile:", error);
+    }
+  };
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: text.trim(),
-      isUser: true,
+  const addMessage = (
+    text: string,
+    isUser: boolean,
+    searchResults?: any[],
+    personalityContext?: string
+  ) => {
+    const message: Message = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      text,
+      isUser,
       timestamp: new Date(),
+      searchResults,
+      personalityContext,
     };
+    setMessages((prev) => [...prev, message]);
+  };
 
-    setMessages((prev) => [...prev, userMessage]);
+  const sendMessage = async () => {
+    if (!inputText.trim() || isLoading) return;
+
+    // Check if user has completed personality assessment
+    if (!personalityProfile) {
+      addMessage(
+        "I'd love to help you, but first I need to learn about your personality! Please complete the personality assessment by clicking the settings button above, then come back here for personalized responses.",
+        false
+      );
+      return;
+    }
+
+    const userMessage = inputText.trim();
     setInputText("");
     setIsLoading(true);
 
-    try {
-      console.log("WebSocket state:", socketRef.current?.readyState);
-      console.log("Video enabled:", isVideoEnabled);
+    // Add user message immediately
+    addMessage(userMessage, true);
 
-      if (
-        socketRef.current &&
-        socketRef.current.readyState === WebSocket.OPEN
-      ) {
-        console.log("Sending via WebSocket");
-        // Send message via WebSocket with video preference
-        socketRef.current.send(
-          JSON.stringify({
-            type: "chat",
-            message: text.trim(),
-            enableVideo: isVideoEnabled,
-          })
+    try {
+      const response = await api.sendPersonalizedChat(params.userId, {
+        message: userMessage,
+        include_search: includeSearch,
+      });
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        addMessage(
+          data.response,
+          false,
+          data.search_results,
+          data.personality_context
         );
       } else {
-        console.log("WebSocket not available, using HTTP fallback");
-        // Fallback to HTTP API
-        const response = await fetch(
-          `${
-            process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-          }/api/chat/${params.userId}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ message: text.trim() }),
-          }
+        addMessage(
+          "I'm sorry, I encountered an error. Please try again.",
+          false
         );
-
-        if (response.ok) {
-          const data = await response.json();
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: (Date.now() + 1).toString(),
-              text: data.response,
-              isUser: false,
-              timestamp: new Date(),
-            },
-          ]);
-        } else {
-          throw new Error("Failed to send message");
-        }
+        toast.error("Failed to get response");
       }
     } catch (error) {
-      toast.error("Failed to send message");
-      console.error("Send message error:", error);
+      console.error("Error sending message:", error);
+      addMessage("I'm sorry, I encountered an error. Please try again.", false);
+      toast.error("Connection error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    sendMessage(inputText);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
   };
 
-  const toggleRecording = () => {
-    setIsRecording(!isRecording);
-    // Voice recording functionality would go here
+  const getTraitColor = (trait: string) => {
+    const colors = {
+      openness: "from-purple-400 to-purple-600",
+      conscientiousness: "from-blue-400 to-blue-600",
+      extraversion: "from-green-400 to-green-600",
+      agreeableness: "from-pink-400 to-pink-600",
+      neuroticism: "from-red-400 to-red-600",
+    };
+    return colors[trait as keyof typeof colors] || "from-gray-400 to-gray-600";
+  };
+
+  const getTraitLabel = (trait: string) => {
+    const labels = {
+      openness: "Openness",
+      conscientiousness: "Conscientiousness",
+      extraversion: "Extraversion",
+      agreeableness: "Agreeableness",
+      neuroticism: "Neuroticism",
+    };
+    return labels[trait as keyof typeof labels] || trait;
+  };
+
+  const getTraitDescription = (trait: string, score: number) => {
+    if (score >= 70) return "High";
+    if (score >= 30) return "Medium";
+    return "Low";
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 p-4"
-      >
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Neural Marionette</h1>
-            <p className="text-gray-400">
-              Real-time conversation with your digital twin
-            </p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div
-              className={`w-3 h-3 rounded-full ${
-                isConnected ? "bg-green-400" : "bg-red-400"
-              }`}
-            />
-            <span className="text-sm text-gray-400">
-              {isConnected ? "Connected" : "Disconnected"}
-            </span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex">
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className="bg-white/10 backdrop-blur-lg border-b border-white/20 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                <Brain className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white">
+                  Personality Assistant
+                </h1>
+                <p className="text-purple-200 text-sm">
+                  {personalityProfile
+                    ? "Personalized for you"
+                    : "Learning about you..."}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => fetchPersonalityProfile()}
+                className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+                title="Refresh Profile"
+              >
+                <RefreshCw className="w-5 h-5 text-white" />
+              </button>
+              <button
+                onClick={() =>
+                  setShowPersonalitySidebar(!showPersonalitySidebar)
+                }
+                className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+                title="View Personality Profile"
+              >
+                <BarChart3 className="w-5 h-5 text-white" />
+              </button>
+              <button
+                onClick={() => router.push(`/onboarding/${params.userId}`)}
+                className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+                title="Retake Assessment"
+              >
+                <Settings className="w-5 h-5 text-white" />
+              </button>
+            </div>
           </div>
         </div>
-      </motion.div>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex max-w-6xl mx-auto w-full">
         {/* Messages */}
-        <div className="flex-1 flex flex-col">
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <AnimatePresence>
             {messages.map((message) => (
               <motion.div
                 key={message.id}
@@ -339,265 +277,193 @@ export default function ChatPage({ params }: { params: { userId: string } }) {
                 }`}
               >
                 <div
-                  className={`max-w-3xl ${
-                    message.isUser ? "order-2" : "order-1"
+                  className={`max-w-3xl p-4 rounded-2xl ${
+                    message.isUser
+                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                      : "bg-white/10 backdrop-blur-lg text-white border border-white/20"
                   }`}
                 >
-                  {/* Video Display */}
-                  {message.videoData && !message.isUser && isVideoEnabled && (
-                    <div className="mb-2">
-                      <video
-                        ref={videoRef}
-                        className="w-full max-w-md rounded-lg border border-gray-600"
-                        autoPlay
-                        muted
-                      >
-                        <source
-                          src={`data:video/mp4;base64,${message.videoData}`}
-                          type="video/mp4"
-                        />
-                      </video>
+                  <div className="flex items-start space-x-3">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        message.isUser
+                          ? "bg-white/20"
+                          : "bg-gradient-to-r from-purple-400 to-pink-400"
+                      }`}
+                    >
+                      {message.isUser ? (
+                        <User className="w-4 h-4 text-white" />
+                      ) : (
+                        <Brain className="w-4 h-4 text-white" />
+                      )}
                     </div>
-                  )}
+                    <div className="flex-1">
+                      <p className="text-sm font-medium mb-1">
+                        {message.isUser ? "You" : "Assistant"}
+                      </p>
+                      <p className="whitespace-pre-wrap">{message.text}</p>
 
-                  {/* Audio Display */}
-                  {message.audioData && !message.isUser && (
-                    <div className="mb-2">
-                      <audio
-                        className="w-full max-w-md"
-                        controls
-                        autoPlay
-                        onLoadedMetadata={(e) => {
-                          console.log(
-                            "Regular audio loaded metadata:",
-                            e.currentTarget.duration
-                          );
-                        }}
-                        onError={(e) => {
-                          console.error("Regular audio error:", e);
-                        }}
-                        onCanPlay={(e) => {
-                          console.log(
-                            "Regular audio can play:",
-                            e.currentTarget.duration
-                          );
-                        }}
-                      >
-                        <source
-                          src={`data:audio/mpeg;base64,${message.audioData}`}
-                          type="audio/mpeg"
-                        />
-                        Your browser does not support the audio element.
-                      </audio>
-                    </div>
-                  )}
-
-                  {/* Streaming Audio Display */}
-                  {message.audioChunks &&
-                    message.audioChunks.length > 0 &&
-                    !message.isUser && (
-                      <div className="mb-2">
-                        <div className="flex items-center space-x-2">
-                          <audio
-                            className="w-full max-w-md"
-                            controls
-                            autoPlay
-                            key={message.audioChunks.length} // Force re-render when chunks change
-                            onLoadedMetadata={(e) => {
-                              console.log(
-                                "Audio loaded metadata:",
-                                e.currentTarget.duration
-                              );
-                            }}
-                            onError={(e) => {
-                              console.error("Audio error:", e);
-                            }}
-                            onCanPlay={(e) => {
-                              console.log(
-                                "Audio can play:",
-                                e.currentTarget.duration
-                              );
-                            }}
-                          >
-                            <source
-                              src={`data:audio/mpeg;base64,${message.audioChunks.join(
-                                ""
-                              )}`}
-                              type="audio/mpeg"
-                            />
-                            Your browser does not support the audio element.
-                          </audio>
-                          {!message.isAudioComplete && (
-                            <div className="flex items-center space-x-1">
-                              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                              <span className="text-xs text-gray-400">
-                                Streaming...
+                      {/* Search Results */}
+                      {message.searchResults &&
+                        message.searchResults.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-white/20">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <Search className="w-4 h-4 text-purple-300" />
+                              <span className="text-sm font-medium text-purple-300">
+                                Found {message.searchResults.length} relevant
+                                sources:
                               </span>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                            <div className="space-y-2">
+                              {message.searchResults
+                                .slice(0, 2)
+                                .map((result, index) => (
+                                  <div
+                                    key={index}
+                                    className="bg-white/10 rounded-lg p-2"
+                                  >
+                                    <p className="text-sm font-medium text-purple-200">
+                                      {result.title || "Untitled"}
+                                    </p>
+                                    <p className="text-xs text-white/70 line-clamp-2">
+                                      {result.text ||
+                                        result.description ||
+                                        "No description available"}
+                                    </p>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        )}
 
-                  {/* Message Bubble */}
-                  <div
-                    className={`px-4 py-3 rounded-2xl ${
-                      message.isUser
-                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-                        : "bg-gray-700/50 backdrop-blur-sm text-gray-100 border border-gray-600"
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap">{message.text}</p>
-                    <p className="text-xs opacity-70 mt-1">
-                      {message.timestamp.toLocaleTimeString()}
-                    </p>
+                      <p className="text-xs text-white/50 mt-2">
+                        {message.timestamp.toLocaleTimeString()}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </motion.div>
             ))}
+          </AnimatePresence>
 
-            {isLoading && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex justify-start"
-              >
-                <div className="bg-gray-700/50 backdrop-blur-sm border border-gray-600 rounded-2xl px-4 py-3">
+          {isLoading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex justify-start"
+            >
+              <div className="bg-white/10 backdrop-blur-lg border border-white/20 p-4 rounded-2xl">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-white" />
+                  </div>
                   <div className="flex items-center space-x-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
-                    <span className="text-gray-300">
-                      Your marionette is thinking...
-                    </span>
+                    <Loader2 className="w-4 h-4 text-white animate-spin" />
+                    <span className="text-white">Thinking...</span>
                   </div>
                 </div>
-              </motion.div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input Area */}
-          <div className="p-6 border-t border-gray-700 bg-gray-800/30 backdrop-blur-sm">
-            <form
-              onSubmit={handleSubmit}
-              className="flex items-center space-x-4"
-            >
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  placeholder="Type your message..."
-                  className="w-full bg-gray-700/50 border border-gray-600 rounded-full px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  disabled={isLoading}
-                />
               </div>
+            </motion.div>
+          )}
 
-              <div className="flex items-center space-x-2">
-                <button
-                  type="button"
-                  onClick={toggleRecording}
-                  className={`p-3 rounded-full transition-colors ${
-                    isRecording
-                      ? "bg-red-600 hover:bg-red-700 text-white"
-                      : "bg-gray-600 hover:bg-gray-500 text-gray-300"
-                  }`}
-                >
-                  {isRecording ? (
-                    <MicOff className="w-5 h-5" />
-                  ) : (
-                    <Mic className="w-5 h-5" />
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsVideoEnabled(!isVideoEnabled)}
-                  className={`p-3 rounded-full transition-colors ${
-                    isVideoEnabled
-                      ? "bg-blue-600 hover:bg-blue-700 text-white"
-                      : "bg-gray-600 hover:bg-gray-500 text-gray-300"
-                  }`}
-                >
-                  {isVideoEnabled ? (
-                    <Video className="w-5 h-5" />
-                  ) : (
-                    <VideoOff className="w-5 h-5" />
-                  )}
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={!inputText.trim() || isLoading}
-                  className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
-              </div>
-            </form>
-          </div>
+          <div ref={messagesEndRef} />
         </div>
 
-        {/* Sidebar */}
-        <div className="w-80 bg-gray-800/30 backdrop-blur-sm border-l border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">
-            Marionette Status
-          </h3>
-
-          <div className="space-y-4">
-            <div className="bg-gray-700/50 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-300 mb-2">
-                Connection
-              </h4>
-              <div className="flex items-center space-x-2">
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    isConnected ? "bg-green-400" : "bg-red-400"
-                  }`}
+        {/* Input Area */}
+        <div className="bg-white/10 backdrop-blur-lg border-t border-white/20 p-4">
+          <div className="flex items-center space-x-3">
+            <div className="flex-1 relative">
+              <textarea
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Ask me anything... I'll respond based on your personality!"
+                className="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-purple-400 resize-none"
+                rows={1}
+                disabled={isLoading}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <label className="flex items-center space-x-2 text-white/70">
+                <input
+                  type="checkbox"
+                  checked={includeSearch}
+                  onChange={(e) => setIncludeSearch(e.target.checked)}
+                  className="rounded"
                 />
-                <span className="text-sm text-gray-400">
-                  {isConnected ? "Active" : "Disconnected"}
-                </span>
-              </div>
-            </div>
-
-            <div className="bg-gray-700/50 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-300 mb-2">
-                Features
-              </h4>
-              <div className="space-y-2 text-sm text-gray-400">
-                <div className="flex items-center space-x-2">
-                  <div
-                    className={`w-2 h-2 rounded-full ${
-                      isVideoEnabled ? "bg-green-400" : "bg-gray-500"
-                    }`}
-                  />
-                  <span>Video Generation</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 rounded-full bg-green-400" />
-                  <span>Voice Cloning</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 rounded-full bg-green-400" />
-                  <span>Personality AI</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-700/50 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-300 mb-2">
-                Performance
-              </h4>
-              <div className="text-sm text-gray-400 space-y-1">
-                <div>Latency: &lt;3s</div>
-                <div>Quality: High</div>
-                <div>Uptime: 99.9%</div>
-              </div>
+                <span className="text-sm">Search</span>
+              </label>
+              <button
+                onClick={sendMessage}
+                disabled={!inputText.trim() || isLoading}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Send className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Personality Sidebar */}
+      <AnimatePresence>
+        {showPersonalitySidebar && personalityProfile && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 320, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            className="bg-white/10 backdrop-blur-lg border-l border-white/20 overflow-hidden"
+          >
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-white mb-6">
+                Your Personality Profile
+              </h2>
+
+              <div className="space-y-4">
+                {Object.entries(personalityProfile.profile).map(
+                  ([trait, score]) => (
+                    <div key={trait} className="bg-white/10 rounded-lg p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-white font-medium">
+                          {getTraitLabel(trait)}
+                        </span>
+                        <span className="text-purple-300 font-bold">
+                          {Math.round(score)}
+                        </span>
+                      </div>
+                      <div className="w-full bg-white/20 rounded-full h-2 mb-2">
+                        <div
+                          className={`bg-gradient-to-r ${getTraitColor(
+                            trait
+                          )} h-2 rounded-full transition-all duration-500`}
+                          style={{ width: `${score}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-sm text-purple-200">
+                        {getTraitDescription(trait, score)} -{" "}
+                        {score >= 70 ? "High" : score >= 30 ? "Medium" : "Low"}
+                      </p>
+                    </div>
+                  )
+                )}
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-white/20">
+                <h3 className="text-lg font-semibold text-white mb-3">
+                  How This Affects Your Experience
+                </h3>
+                <div className="space-y-2 text-sm text-purple-200">
+                  <p>
+                    • Your responses are tailored to your personality traits
+                  </p>
+                  <p>• Search results match your preferences</p>
+                  <p>• Communication style adapts to your needs</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

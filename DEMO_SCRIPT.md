@@ -1,216 +1,160 @@
-# Neural Marionette - Hackathon Demo Script
+# Personality-Aligned Assistant Demo Script
 
-## 🎭 The Ultimate Demo: "Neural Marionette - Real-Time Ego Hijacking"
+## Overview
 
-### Pre-Demo Setup (5 minutes before presentation)
+This demo showcases a privacy-first AI assistant that learns your personality through interactive questionnaires and personalizes every interaction based on your unique traits.
 
-1. **Environment Check**
+## Demo Flow (5-7 minutes)
 
-   - ✅ Frontend running on localhost:3000
-   - ✅ Backend API running on localhost:8000
-   - ✅ SadTalker server running on Prime Intellect GPU
-   - ✅ All API keys configured and working
-   - ✅ Sample data ready (text file, photo, voice sample)
+### 1. The Setup (1 minute)
 
-2. **Demo Data Preparation**
-   - Text file: 2000+ words of personal writing/conversations
-   - Photo: High-res headshot with good lighting
-   - Voice sample: 2-minute clear audio recording
+**What to show:**
 
----
+- Landing page explaining the concept
+- "Personality-Aligned Assistant" branding
+- Privacy-first messaging
 
-## 🎬 Demo Script (10 minutes)
+**What to say:**
+"Today I'm showing you something different from typical AI assistants. Instead of generic responses, this system learns your personality through scientifically-validated questionnaires and adapts every interaction to match your unique traits. And here's the key - your personality data stays on your device."
 
-### Opening Hook (30 seconds)
+### 2. The Assessment (2 minutes)
 
-**"Forget AI clones. That's a simulation. We've built a system that performs real-time neural hijacking of a person's likeness."**
+**What to show:**
 
-_Show the landing page with the dramatic tagline_
+- Navigate to `/onboarding/demo-user`
+- Interactive Big Five questionnaire
+- Progress bar and smooth animations
+- Answer 3-4 questions to show the flow
 
-**"You are not talking to a clone; you are talking to a ghost in the machine that wears your face."**
+**What to say:**
+"This is the Big Five personality assessment - the most scientifically validated model. It measures five core dimensions: Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism. Each question is carefully crafted to reveal your personality traits without being invasive."
 
-### The Setup (1 minute)
+**Demo questions to answer:**
 
-**"Let me show you what we're working with."**
+- "I enjoy exploring new ideas and concepts" (High score for Openness)
+- "I prefer routine and familiar activities" (Low score for Openness)
+- "I feel energized in large social gatherings" (High score for Extraversion)
 
-_Open file explorer and show:_
+### 3. The Profile Reveal (1 minute)
 
-- Raw text file (WhatsApp/Discord export)
-- Single profile photo
-- Voice sample audio file
+**What to show:**
 
-**"This is all we need. No complex setup, no massive datasets. Just your digital DNA."**
+- Personality radar chart with animated progress bars
+- Trait descriptions and insights
+- Content preferences based on personality
 
-### The Resurrection (2 minutes)
+**What to say:**
+"Here's your personality profile visualized. Notice how each trait is scored from 0-100. The system now knows you're high in Openness, which means you prefer novel, creative content. It also knows your Extraversion level, which affects how social and outgoing the responses should be."
 
-**"Now watch the magic happen."**
+### 4. The Personalization (2-3 minutes)
 
-_Navigate to upload page_
+**What to show:**
 
-1. **Upload Process**
+- Navigate to `/chat/demo-user`
+- Show personality sidebar
+- Ask vague questions and show tailored responses
+- Demonstrate search integration
 
-   - Drag and drop text file → "Text data uploaded!"
-   - Drag and drop photo → "Photo uploaded!"
-   - Drag and drop voice → "Voice sample uploaded!"
-   - Click "Begin Resurrection"
+**What to say:**
+"Now let's see the magic. I'll ask the same vague question twice, but watch how the responses change based on personality."
 
-2. **Training Dashboard**
-   - Show progress bar animating
-   - Point out each step:
-     - "Data preprocessing and validation"
-     - "OpenAI fine-tuning job started"
-     - "Voice cloning with ElevenLabs"
-     - "SadTalker model optimization"
-     - "Marionette ready for resurrection"
+**Demo questions:**
 
-**"This isn't prompt engineering. This is real weight modification. We're literally changing the neural network's parameters to learn your specific patterns."**
+1. "I'm bored, find me something interesting to read"
 
-### First Contact (3 minutes)
+   - For high Openness: Shows academic papers, research, creative content
+   - For high Extraversion: Shows trending social topics, community discussions
 
-**"And now... the moment of truth."**
+2. "Help me plan my day"
+   - For high Conscientiousness: Detailed, structured planning
+   - For low Conscientiousness: Flexible, spontaneous suggestions
 
-_Navigate to chat interface_
+**What to highlight:**
 
-1. **Initial Greeting**
+- Search results are customized based on personality
+- Response tone adapts to traits
+- Personality sidebar shows why certain content was chosen
 
-   - Marionette introduces itself
-   - Show the photorealistic talking head
-   - Point out the voice quality
+### 5. The Technical Reveal (1 minute)
 
-2. **The Turing Test**
+**What to show:**
 
-   - Ask: "Tell me about your personality and how you communicate"
-   - Show the response captures writing style
-   - Ask: "What's your favorite way to express excitement?"
-   - Show personality-specific response
+- Backend API endpoints
+- Smithery MCP gateway integration
+- mem0 local storage
+- Exa search customization
 
-3. **Real-Time Magic**
-   - Type a message
-   - Show the <3 second response time
-   - Point out the seamless video generation
-   - Show the natural lip-sync
+**What to say:**
+"Behind the scenes, this uses several cutting-edge technologies:
 
-### The Technical Reveal (2 minutes)
+- Smithery MCP Gateway orchestrates everything
+- mem0 stores your personality locally - it never leaves your device
+- Exa.ai provides personality-driven search results
+- OpenAI GPT-4o-mini generates responses tailored to your traits
 
-**"But here's what makes this truly special."**
+This qualifies for multiple hackathon tracks: Smithery, mem0, Exa, OpenAI, and ElevenLabs."
 
-_Show architecture diagram_
+## Key Talking Points
 
-1. **Fine-Tuning Explanation**
+### Privacy-First Approach
 
-   - "We're not using RAG or prompt engineering"
-   - "We're modifying the actual weights of GPT-4o-mini"
-   - "The model learns your syntax, vocabulary, and conversational patterns"
+- "Unlike other AI systems that scrape your data, this requires explicit consent"
+- "Your personality profile is stored locally with mem0 - it never leaves your device"
+- "You can retake the assessment or delete your profile anytime"
 
-2. **Real-Time Pipeline**
+### Scientific Foundation
 
-   - "User input → Fine-tuned LLM → ElevenLabs voice → SadTalker video"
-   - "All happening in under 3 seconds"
-   - "This is the hardest part - making these heavy systems work together"
+- "Big Five is the most validated personality model in psychology"
+- "20 carefully crafted questions reveal your core traits"
+- "Each response is scientifically meaningful, not just random data"
 
-3. **Tool Integration**
-   - "OpenAI fine-tuning API for the brain"
-   - "ElevenLabs for voice cloning"
-   - "SadTalker on Prime Intellect GPU for video"
-   - "Supabase for real-time data management"
+### Real Personalization
 
-### The Unhinged Move (1.5 minutes)
+- "Watch how the same question gets different responses for different personalities"
+- "Search results are customized based on your preferences"
+- "Communication style adapts to your traits"
 
-**"But what happens when two minds become one?"**
+### Technical Innovation
 
-_If time permits, show ego fusion feature_
+- "MCP Gateway orchestration for seamless tool integration"
+- "Local-first storage with mem0 for privacy"
+- "Personality-driven search with Exa.ai"
 
-1. **Model Merging Demo**
-   - "We can merge two fine-tuned models in real-time"
-   - "Take Person A's linguistic style + Person B's personality"
-   - "Create a hybrid AI entity"
-   - Show the bizarre, fascinating result
+## Demo Tips
 
-**"This isn't just prompt engineering; this is arithmetic on personality models."**
+1. **Prepare the demo user**: Complete the assessment beforehand with a specific personality profile
+2. **Have backup questions ready**: Prepare 3-4 questions that clearly show personalization
+3. **Show the sidebar**: Always keep the personality sidebar open to show transparency
+4. **Highlight privacy**: Emphasize the local-first approach throughout
+5. **Compare responses**: Show how different personalities would get different results
 
-### The Close (30 seconds)
+## Troubleshooting
 
-**"This is what the future of AI looks like. Not generic chatbots, but personalized digital twins that capture the essence of who you are."**
+- If Smithery/MCP isn't working: Show the questionnaire and profile, explain the architecture
+- If search fails: Focus on the personality-driven responses from OpenAI
+- If backend is down: Show the frontend assessment and explain the backend integration
 
-_Show the final chat interface with the talking head_
+## Success Metrics
 
-**"We've built a system that doesn't just simulate you - it resurrects you."**
+- Audience understands the privacy-first approach
+- Clear demonstration of personality-driven personalization
+- Technical architecture is impressive but accessible
+- Multiple track qualifications are evident
+- Demo flows smoothly without technical issues
 
----
+## Post-Demo Q&A
 
-## 🎯 Key Talking Points
+**Q: How is this different from ChatGPT?**
+A: ChatGPT gives generic responses. This learns your personality and adapts every interaction to match your unique traits.
 
-### Technical Achievements
+**Q: Is my data safe?**
+A: Yes, your personality profile is stored locally with mem0. It never leaves your device.
 
-- **Real Fine-Tuning**: Actual weight modification, not prompting
-- **Low Latency**: Sub-3-second end-to-end pipeline
-- **Real-Time Video**: Photorealistic talking head generation
-- **Seamless Integration**: Multiple AI services working together
+**Q: Can I change my personality profile?**
+A: Absolutely. You can retake the assessment anytime or delete your profile.
 
-### Hackathon Track Wins
+**Q: What tracks does this qualify for?**
+A: Smithery (MCP orchestration), mem0 (local storage), Exa (search), OpenAI (AI), and ElevenLabs (voice).
 
-- **OpenAI Track**: Showcases fine-tuning API as core differentiator
-- **ElevenLabs Track**: Voice cloning as seamless component
-- **Prime Intellect Track**: GPU compute for SadTalker inference
-- **Supabase Track**: Backend database + real-time updates
-
-### Wow Factors
-
-- **The Resurrection**: Single photo → photorealistic avatar
-- **The Voice**: Indistinguishable voice cloning
-- **The Personality**: Genuine fine-tuning, not simulation
-- **The Speed**: Real-time generation and streaming
-
----
-
-## 🚨 Backup Plans
-
-### If Fine-Tuning Takes Too Long
-
-- Pre-train a model beforehand
-- Show the training process, then switch to pre-trained model
-- Explain the process while showing results
-
-### If SadTalker Fails
-
-- Use D-ID or HeyGen API as fallback
-- Pre-generate some video samples
-- Focus on the voice and personality aspects
-
-### If WebSocket Issues
-
-- Use HTTP polling instead
-- Pre-generate responses for demo
-- Focus on the core pipeline
-
-### If Voice Cloning Fails
-
-- Use ElevenLabs pre-made voices
-- Focus on the fine-tuning and video aspects
-- Explain the voice cloning process
-
----
-
-## 🏆 Success Metrics
-
-### What Judges Should See
-
-- **Visceral Reaction**: "Holy shit, that looks exactly like them"
-- **Technical Understanding**: "This is real fine-tuning, not prompting"
-- **Seamless Experience**: "It feels like talking to the real person"
-- **Innovation**: "I've never seen anything like this"
-
-### Demo Checklist
-
-- [ ] All services running and healthy
-- [ ] Sample data uploaded and processed
-- [ ] Fine-tuning job completed
-- [ ] Voice cloning successful
-- [ ] Video generation working
-- [ ] Real-time chat functional
-- [ ] Backup plans ready
-- [ ] Demo script rehearsed
-
----
-
-**Remember: This isn't just a demo - it's a resurrection. Make them believe in the magic.**
+**Q: How accurate is the personality assessment?**
+A: It uses the Big Five model, which is the most scientifically validated personality framework in psychology.

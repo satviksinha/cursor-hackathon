@@ -1,33 +1,41 @@
-# Neural Marionette - Real-Time Ego Hijacking
+# Personality-Aligned Assistant - Real-Time Personalization
 
-> "Forget AI clones. That's a simulation. We've built a system that performs real-time neural hijacking of a person's likeness using RAG."
+> "Forget generic AI assistants. We've built a system that learns your personality through interactive questionnaires and personalizes every interaction using RAG, mem0, and Exa search."
 
-A hackathon project that uses RAG (Retrieval-Augmented Generation) to instantly process user data, clones their voice, and creates a photorealistic talking head avatar - all working together in a seamless pipeline to resurrect someone's digital presence.
+A hackathon project that uses Big Five personality assessment to create a truly personalized AI assistant that adapts its responses, search preferences, and communication style based on your unique personality profile.
 
 ## 🚀 Features
 
-- **Instant RAG Processing**: OpenAI text-embedding-3-small + Supabase pgvector for instant personality capture
-- **Voice Cloning**: ElevenLabs API for indistinguishable voice synthesis
-- **Photorealistic Video**: SadTalker for real-time talking head generation
-- **Low Latency**: Sub-3-second end-to-end pipeline
-- **Modern UI**: Next.js frontend with real-time WebSocket communication
+- **Interactive Personality Assessment**: Big Five (OCEAN) questionnaire with 20 scientifically-validated questions
+- **Local-First Privacy**: Personality profiles stored locally with mem0 - your data never leaves your device
+- **Personalized Responses**: OpenAI GPT-4o-mini responses tailored to your personality traits
+- **Smart Search Integration**: Exa.ai search results customized based on your personality preferences
+- **Real-Time Adaptation**: Communication style adapts to your Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism
+- **Modern UI**: Next.js frontend with beautiful personality visualization and insights
 
 ## 🏗️ Architecture
 
 ```
-User Input → RAG Retrieval → GPT-4o-mini + Context → ElevenLabs Voice → SadTalker Video → Real-Time Display
+User → Personality Assessment → mem0 Storage → Personalized Chat → OpenAI + Exa Search
 ```
+
+**New Flow:**
+
+1. **Onboarding**: Interactive Big Five questionnaire
+2. **Storage**: Personality profile stored locally with mem0 via Smithery gateway
+3. **Personalization**: Chat responses adapted based on personality traits
+4. **Search**: Exa search queries customized to personality preferences
+5. **Voice**: ElevenLabs voice synthesis (optional)
 
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 14, React, Tailwind CSS, Framer Motion
-- **Backend**: FastAPI, WebSockets, Async Python
-- **AI Services**: OpenAI Embeddings + GPT-4o-mini, ElevenLabs Voice Cloning
-- **Vector DB**: Supabase with pgvector extension
-- **Video**: SadTalker (open-source talking head)
-- **Compute**: Prime Intellect GPU instances
+- **Backend**: FastAPI, Async Python
+- **AI Services**: OpenAI GPT-4o-mini, ElevenLabs Voice Cloning
+- **Memory**: mem0 (local-first personality storage)
+- **Search**: Exa.ai (personality-driven search)
 - **Database**: Supabase (PostgreSQL + Storage)
-- **Real-time**: Socket.IO for WebSocket communication
+- **Real-time**: Native WebSocket communication
 
 ## 📋 Prerequisites
 
@@ -35,8 +43,8 @@ User Input → RAG Retrieval → GPT-4o-mini + Context → ElevenLabs Voice → 
 - Python 3.9+
 - Supabase account
 - OpenAI API key
-- ElevenLabs API key
-- Prime Intellect account ($50 credits)
+- ElevenLabs API key (optional)
+- Exa.ai API key
 
 ## 🚀 Quick Start
 
@@ -61,10 +69,10 @@ cp env.example .env
 Required environment variables:
 
 - `OPENAI_API_KEY`: Your OpenAI API key
-- `ELEVENLABS_API_KEY`: Your ElevenLabs API key
+- `ELEVENLABS_API_KEY`: Your ElevenLabs API key (optional)
 - `SUPABASE_URL`: Your Supabase project URL
 - `SUPABASE_ANON_KEY`: Your Supabase anon key
-- `PRIME_INTELLECT_API_KEY`: Your Prime Intellect API key
+- `EXA_API_KEY`: Your Exa.ai API key
 
 ### 3. Database Setup
 
@@ -80,23 +88,19 @@ npm run dev
 
 # Terminal 2: Backend API
 npm run backend
-
-# Terminal 3: SadTalker Server (on Prime Intellect GPU)
-cd sadtalker-server
-python serve.py
 ```
 
 ### 5. Access the Application
 
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
-- SadTalker Server: http://localhost:8001
 
 ## 🎯 Usage
 
-1. **Upload Data**: Provide text data, profile photo, and voice sample
-2. **Training**: Wait for fine-tuning to complete (20-60 minutes)
-3. **Chat**: Interact with your photorealistic digital twin
+1. **Personality Assessment**: Complete the Big Five questionnaire at `/onboarding/[userId]`
+2. **View Profile**: See your personality radar chart and insights
+3. **Personalized Chat**: Interact with your AI assistant at `/chat/[userId]`
+4. **Adaptive Search**: Get search results tailored to your personality preferences
 
 ## 📁 Project Structure
 
@@ -104,19 +108,15 @@ python serve.py
 neural-marionette/
 ├── app/                    # Next.js frontend
 │   ├── page.tsx           # Landing page
-│   ├── upload/            # Data upload interface
-│   ├── training/[userId]/  # Training progress
-│   └── chat/[userId]/     # Live chat interface
+│   ├── onboarding/[userId]/ # Personality assessment
+│   └── chat/[userId]/      # Personalized chat interface
 ├── backend/               # FastAPI backend
 │   ├── main.py           # Main API server
-│   ├── openai_finetuning.py
+│   ├── mem0_client.py    # Direct mem0 integration
+│   ├── exa_client.py     # Exa.ai search client
+│   ├── personality_assessment.py # Big Five logic
 │   ├── elevenlabs_service.py
-│   ├── sadtalker_client.py
-│   ├── supabase_client.py
-│   └── pipeline.py        # Main orchestration
-├── sadtalker-server/      # SadTalker inference server
-│   ├── serve.py          # FastAPI wrapper
-│   └── inference.py       # Model inference
+│   └── supabase_client.py
 └── supabase-schema.sql    # Database schema
 ```
 
@@ -124,50 +124,44 @@ neural-marionette/
 
 ### Backend API (`/api/`)
 
-- `POST /upload` - Upload user data (text, photo, voice)
-- `POST /train/{user_id}` - Start fine-tuning process
-- `GET /train/{user_id}/status` - Get training status
-- `POST /chat/{user_id}` - Send message to marionette
-- `WS /ws/{user_id}` - WebSocket for real-time communication
+- `GET /personality/questionnaire` - Get Big Five questions
+- `POST /personality/assess/{user_id}` - Process questionnaire answers
+- `GET /personality/profile/{user_id}` - Get user's personality profile
+- `POST /chat/personalized/{user_id}` - Send personalized chat message
 - `GET /health` - Health check
-
-### SadTalker Server (`/`)
-
-- `POST /generate` - Generate talking head video
-- `POST /generate_stream` - Stream video frames
-- `GET /model_info` - Get model information
-- `POST /optimize` - Optimize for real-time inference
 
 ## 🎨 Demo Script
 
-1. **The Setup**: Show raw inputs (photo, text file, voice sample)
-2. **The Resurrection**: Click "Resurrect" - watch instant RAG processing
-3. **First Contact**: Marionette introduces itself
-4. **The Turing Test**: Ask personal questions requiring nuanced understanding
-5. **The Technical Reveal**: Show architecture, explain RAG vs fine-tuning
+1. **The Assessment**: Show interactive Big Five questionnaire
+2. **The Profile**: Display personality radar chart and insights
+3. **The Personalization**: Ask vague questions and show tailored responses
+4. **The Search**: Demonstrate personality-driven search results
+5. **The Comparison**: Show how different personalities get different results
 
 ## 🏆 Hackathon Tracks
 
-This project targets multiple hackathon tracks:
+This project qualifies for multiple hackathon tracks:
 
-- **OpenAI Track**: Showcases fine-tuning API as core differentiator
-- **ElevenLabs Track**: Voice cloning as seamless component
-- **Prime Intellect Track**: GPU compute for SadTalker inference
-- **Supabase Track**: Backend database + real-time updates
+- **mem0 Track**: Local-first personality storage with privacy-first approach
+- **Exa Track**: Personality-driven search customization
+- **OpenAI Track**: GPT-4o-mini with personality-aware prompting
+- **ElevenLabs Track**: Voice synthesis (optional feature)
 
 ## ⚡ Performance Targets
 
-- **Latency**: <3 seconds from input to video response
-- **Quality**: Photorealistic face, natural voice, coherent personality
-- **Stability**: Handle 5-minute conversations without crashes
-- **Wow Factor**: Judges' visceral reaction when face comes alive
+- **Assessment**: Complete Big Five in <2 minutes
+- **Personalization**: Responses adapted to personality traits
+- **Privacy**: All personality data stored locally with mem0
+- **Search**: Results customized based on personality preferences
+- **Wow Factor**: Clear demonstration of personality-driven personalization
 
-## 🚨 Risk Mitigation
+## 🔒 Privacy Benefits
 
-- **SadTalker Issues**: Fallback to D-ID/HeyGen APIs
-- **Fine-tuning Fails**: Fallback to GPT-4o with RAG
-- **High Latency**: Pre-generate responses for demo
-- **GPU Unavailable**: Alternative cloud providers
+- **Local-First**: Personality profiles stored on user's device with mem0
+- **No Data Harvesting**: No scraping of private information
+- **Consensual**: User explicitly provides personality data
+- **Transparent**: Clear explanation of how data is used
+- **Controllable**: User can retake assessment or delete profile
 
 ## 📝 License
 
@@ -179,4 +173,4 @@ This is a hackathon project, but feel free to submit issues or improvements!
 
 ---
 
-**Built for hackathons. Built to win. Built to amaze.**
+**Built for hackathons. Built to personalize. Built to respect privacy.**

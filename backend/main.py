@@ -7,7 +7,7 @@ import os
 from dotenv import load_dotenv
 import asyncio
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import logging
 from auth import get_user_id_from_token
 import time
@@ -26,6 +26,9 @@ from elevenlabs_service import ElevenLabsService
 from sadtalker_client import SadTalkerClient
 from pipeline import NeuralMarionettePipeline
 from supabase_client import SupabaseClient
+from mem0_client import mem0_client
+from exa_client import exa_client
+from personality_assessment import big_five_assessment, PersonalityProfile
 
 # Configure logging
 logging.basicConfig(
@@ -37,6 +40,23 @@ logger = logging.getLogger(__name__)
 # Pydantic models
 class ChatMessage(BaseModel):
     message: str
+
+class QuestionnaireAnswer(BaseModel):
+    question_id: str
+    score: int  # 1-5 scale
+
+class QuestionnaireResponse(BaseModel):
+    answers: List[QuestionnaireAnswer]
+
+class PersonalityInsights(BaseModel):
+    primary_traits: List[Dict[str, Any]]
+    secondary_traits: List[Dict[str, Any]]
+    recommendations: List[str]
+    content_preferences: List[str]
+
+class PersonalizedChatMessage(BaseModel):
+    message: str
+    include_search: bool = True
 
 app = FastAPI(title="Neural Marionette API", version="1.0.0")
 
@@ -342,6 +362,278 @@ async def debug_websocket_test(user_id: str, request: dict):
             "status": "error",
             "error": str(e)
         }
+
+# Personality Assessment Endpoints
+
+@app.get("/api/personality/questionnaire")
+async def get_questionnaire():
+    """Get Big Five personality questionnaire questions"""
+    try:
+        questions = big_five_assessment.get_questions()
+        return {
+            "status": "success",
+            "questions": questions,
+            "total_questions": len(questions)
+        }
+    except Exception as e:
+        logger.error(f"Questionnaire error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/personality/assess/{user_id}")
+async def assess_personality(user_id: str, response: QuestionnaireResponse):
+    """Process personality questionnaire answers and store profile"""
+    try:
+        # Convert answers to dict format
+        answers_dict = {answer.question_id: answer.score for answer in response.answers}
+        
+        # Calculate personality profile
+        profile = big_five_assessment.calculate_scores(answers_dict)
+        profile.user_id = user_id
+        
+        # Store profile in mem0 directly
+        profile_data = profile.to_dict()
+        memory_result = await mem0_client.add_memory(
+            content=f"User {user_id} personality: Openness {profile.openness}%, Conscientiousness {profile.conscientiousness}%, Extraversion {profile.extraversion}%, Agreeableness {profile.agreeableness}%, Neuroticism {profile.neuroticism}%. Full data: {json.dumps(profile_data)}",
+            metadata={
+                "category": "personality_profile",
+                "user_id": user_id,
+                "timestamp": profile.timestamp
+            }
+        )
+        
+        # Generate insights
+        insights = big_five_assessment.get_personality_insights(profile)
+        
+        return {
+            "status": "success",
+            "profile": profile_data,
+            "insights": insights,
+            "memory_stored": memory_result.get("success", False)
+        }
+    except Exception as e:
+        logger.error(f"Personality assessment error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/personality/profile/{user_id}")
+async def get_personality_profile(user_id: str):
+    """Get user's personality profile from memory"""
+    try:
+        # Search for user's personality profile in mem0
+        search_result = await mem0_client.search_memory(
+            query=f"demo-user Openness Conscientiousness Extraversion Agreeableness Neuroticism",
+            limit=10,
+            user_id=user_id
+        )
+        
+        if not search_result.get("memories"):
+            raise HTTPException(status_code=404, detail="Personality profile not found")
+        
+        # Parse the stored profile from individual memories
+        profile_data = {}
+        for memory in search_result["memories"]:
+            memory_content = memory.get("memory", "")
+            if "Openness" in memory_content and "%" in memory_content:
+                # Handle format: "demo-user Openness 118.75%"
+                try:
+                    openness_str = memory_content.split("Openness ")[1].split("%")[0]
+                    profile_data["openness"] = float(openness_str)
+                except (IndexError, ValueError):
+                    pass
+            elif "Conscientiousness" in memory_content and "%" in memory_content:
+                try:
+                    conscientiousness_str = memory_content.split("Conscientiousness ")[1].split("%")[0]
+                    profile_data["conscientiousness"] = float(conscientiousness_str)
+                except (IndexError, ValueError):
+                    pass
+            elif "Extraversion" in memory_content and "%" in memory_content:
+                try:
+                    extraversion_str = memory_content.split("Extraversion ")[1].split("%")[0]
+                    profile_data["extraversion"] = float(extraversion_str)
+                except (IndexError, ValueError):
+                    pass
+            elif "Agreeableness" in memory_content and "%" in memory_content:
+                try:
+                    agreeableness_str = memory_content.split("Agreeableness ")[1].split("%")[0]
+                    profile_data["agreeableness"] = float(agreeableness_str)
+                except (IndexError, ValueError):
+                    pass
+            elif "Neuroticism" in memory_content and "%" in memory_content:
+                try:
+                    neuroticism_str = memory_content.split("Neuroticism ")[1].split("%")[0]
+                    profile_data["neuroticism"] = float(neuroticism_str)
+                except (IndexError, ValueError):
+                    pass
+        
+        if not profile_data:
+            raise HTTPException(status_code=404, detail="Personality profile not found")
+        
+        # Create PersonalityProfile object
+        profile = PersonalityProfile(
+            user_id=user_id,
+            openness=profile_data.get("openness", 0),
+            conscientiousness=profile_data.get("conscientiousness", 0),
+            extraversion=profile_data.get("extraversion", 0),
+            agreeableness=profile_data.get("agreeableness", 0),
+            neuroticism=profile_data.get("neuroticism", 0),
+            timestamp=datetime.now().isoformat(),
+            raw_scores={}
+        )
+        
+        return {
+            "status": "success",
+            "profile": profile.to_dict()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Get personality profile error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/chat/personalized/{user_id}")
+async def personalized_chat(user_id: str, chat_message: PersonalizedChatMessage):
+    """Send a personalized chat message based on user's personality profile"""
+    try:
+        # First, get user's personality profile
+        profile_result = await mem0_client.search_memory(
+            query=f"demo-user Openness Conscientiousness Extraversion Agreeableness Neuroticism",
+            limit=10,
+            user_id=user_id
+        )
+        
+        personality_context = ""
+        if profile_result.get("memories"):
+            # Parse personality data from individual memories
+            profile_data = {}
+            for memory in profile_result["memories"]:
+                memory_content = memory.get("memory", "")
+                if "Openness" in memory_content and "%" in memory_content:
+                    # Handle format: "demo-user Openness 118.75%"
+                    try:
+                        openness_str = memory_content.split("Openness ")[1].split("%")[0]
+                        profile_data["openness"] = float(openness_str)
+                    except (IndexError, ValueError):
+                        pass
+                elif "Conscientiousness" in memory_content and "%" in memory_content:
+                    try:
+                        conscientiousness_str = memory_content.split("Conscientiousness ")[1].split("%")[0]
+                        profile_data["conscientiousness"] = float(conscientiousness_str)
+                    except (IndexError, ValueError):
+                        pass
+                elif "Extraversion" in memory_content and "%" in memory_content:
+                    try:
+                        extraversion_str = memory_content.split("Extraversion ")[1].split("%")[0]
+                        profile_data["extraversion"] = float(extraversion_str)
+                    except (IndexError, ValueError):
+                        pass
+                elif "Agreeableness" in memory_content and "%" in memory_content:
+                    try:
+                        agreeableness_str = memory_content.split("Agreeableness ")[1].split("%")[0]
+                        profile_data["agreeableness"] = float(agreeableness_str)
+                    except (IndexError, ValueError):
+                        pass
+                elif "Neuroticism" in memory_content and "%" in memory_content:
+                    try:
+                        neuroticism_str = memory_content.split("Neuroticism ")[1].split("%")[0]
+                        profile_data["neuroticism"] = float(neuroticism_str)
+                    except (IndexError, ValueError):
+                        pass
+            
+            if profile_data:
+                personality_context = f"""
+                User Personality Profile:
+                - Openness: {profile_data.get('openness', 0)}/100
+                - Conscientiousness: {profile_data.get('conscientiousness', 0)}/100
+                - Extraversion: {profile_data.get('extraversion', 0)}/100
+                - Agreeableness: {profile_data.get('agreeableness', 0)}/100
+                - Neuroticism: {profile_data.get('neuroticism', 0)}/100
+                
+                Adjust your response style and content recommendations based on these traits.
+                """
+        
+        # If user wants search, perform personality-based search
+        search_results = None
+        if chat_message.include_search:
+            # Determine search type based on personality
+            if profile_result.get("memories"):
+                try:
+                    profile_data = json.loads(profile_json)
+                    openness = profile_data['profile']['openness']
+                    extraversion = profile_data['profile']['extraversion']
+                    conscientiousness = profile_data['profile']['conscientiousness']
+                    
+                    # Choose search type based on personality
+                    if openness >= 70:
+                        # High openness - prefer research papers
+                        search_results = await exa_client.research_search(
+                            query=chat_message.message,
+                            num_results=3
+                        )
+                    elif extraversion >= 70:
+                        # High extraversion - prefer news and social content
+                        search_results = await exa_client.news_search(
+                            query=chat_message.message,
+                            num_results=3
+                        )
+                    elif conscientiousness >= 70:
+                        # High conscientiousness - prefer structured content
+                        search_results = await exa_client.general_search(
+                            query=chat_message.message,
+                            num_results=3
+                        )
+                    else:
+                        # Default to general search
+                        search_results = await exa_client.general_search(
+                            query=chat_message.message,
+                            num_results=3
+                        )
+                except Exception as search_error:
+                    logger.warning(f"Search failed: {search_error}")
+        
+        # Generate response using OpenAI with personality context
+        from openai import AsyncOpenAI
+        openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        
+        system_prompt = f"""You are a personalized AI assistant. {personality_context}
+        
+        Respond to the user's message in a way that matches their personality profile.
+        If search results are provided, incorporate relevant information from them.
+        Be conversational and helpful."""
+        
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": chat_message.message}
+        ]
+        
+        if search_results and search_results.get("results"):
+            search_context = "\n".join([
+                f"- {result.get('title', 'No title')}: {result.get('text', 'No description')}"
+                for result in search_results["results"][:3]
+            ])
+            messages.append({
+                "role": "system", 
+                "content": f"Relevant search results:\n{search_context}"
+            })
+        
+        response = await openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            max_tokens=500,
+            temperature=0.7
+        )
+        
+        assistant_message = response.choices[0].message.content
+        
+        return {
+            "status": "success",
+            "response": assistant_message,
+            "personality_context": personality_context,
+            "search_performed": chat_message.include_search,
+            "search_results": search_results.get("results", []) if search_results else []
+        }
+        
+    except Exception as e:
+        logger.error(f"Personalized chat error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

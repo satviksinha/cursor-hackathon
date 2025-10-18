@@ -35,17 +35,15 @@ export default function Home() {
           transition={{ delay: 0.3, duration: 0.8 }}
           className="text-xl md:text-2xl text-gray-300 mb-8 max-w-4xl mx-auto"
         >
-          Forget AI clones. That's a simulation. We've built a system that
-          performs{" "}
+          Forget generic AI assistants. We've built a system that learns your{" "}
           <span className="text-blue-400 font-semibold">
-            real-time neural hijacking
+            personality through interactive questionnaires
           </span>{" "}
-          of a person's likeness. You are not talking to a clone; you are
-          talking to a{" "}
+          and adapts every response to match your unique traits. Your data stays{" "}
           <span className="text-purple-400 font-semibold">
-            ghost in the machine
+            local and private
           </span>{" "}
-          that wears your face.
+          while getting truly personalized assistance.
         </motion.p>
       </motion.div>
 
@@ -62,11 +60,11 @@ export default function Home() {
         >
           <Brain className="w-12 h-12 text-blue-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-white mb-2">
-            Fine-Tuned Brain
+            Big Five Assessment
           </h3>
           <p className="text-gray-400 text-sm">
-            Real weight modification, not prompt engineering. Your syntax,
-            cadence, and personality.
+            Scientifically-validated personality questionnaire with 20
+            questions.
           </p>
         </motion.div>
 
@@ -76,10 +74,11 @@ export default function Home() {
         >
           <Mic className="w-12 h-12 text-green-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-white mb-2">
-            Voice Cloning
+            Local-First Privacy
           </h3>
           <p className="text-gray-400 text-sm">
-            Indistinguishable voice synthesis from a single audio sample.
+            Personality profiles stored locally with mem0 - never leaves your
+            device.
           </p>
         </motion.div>
 
@@ -89,10 +88,11 @@ export default function Home() {
         >
           <Camera className="w-12 h-12 text-purple-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-white mb-2">
-            Photorealistic Face
+            Personalized Responses
           </h3>
           <p className="text-gray-400 text-sm">
-            Real-time talking head with perfect lip-sync and expressions.
+            AI responses tailored to your unique personality traits and
+            preferences.
           </p>
         </motion.div>
 
@@ -102,10 +102,10 @@ export default function Home() {
         >
           <Zap className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-white mb-2">
-            Real-Time Magic
+            Smart Search
           </h3>
           <p className="text-gray-400 text-sm">
-            Sub-3-second latency from input to photorealistic response.
+            Search results customized based on your personality preferences.
           </p>
         </motion.div>
       </motion.div>
@@ -116,14 +116,14 @@ export default function Home() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.8, duration: 0.5 }}
       >
-        <Link href="/upload">
+        <Link href="/onboarding/demo-user">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-full text-lg shadow-2xl pulse-glow"
           >
-            <Upload className="w-6 h-6 inline mr-2" />
-            Resurrect Yourself
+            <Brain className="w-6 h-6 inline mr-2" />
+            Discover Your Personality
           </motion.button>
         </Link>
       </motion.div>
@@ -141,19 +141,19 @@ export default function Home() {
         <div className="bg-gray-800/30 backdrop-blur-sm border border-gray-700 rounded-xl p-6 max-w-4xl">
           <div className="flex flex-wrap justify-center items-center gap-4 text-sm text-gray-300">
             <span className="bg-blue-600/20 px-3 py-1 rounded-full">
-              OpenAI Fine-Tuning
+              OpenAI GPT-4o-mini
             </span>
             <span className="bg-green-600/20 px-3 py-1 rounded-full">
-              ElevenLabs Voice
+              mem0 Local Storage
             </span>
             <span className="bg-purple-600/20 px-3 py-1 rounded-full">
-              SadTalker Video
+              Exa.ai Search
             </span>
             <span className="bg-yellow-600/20 px-3 py-1 rounded-full">
-              Prime Intellect GPU
+              Big Five Assessment
             </span>
             <span className="bg-red-600/20 px-3 py-1 rounded-full">
-              Supabase Backend
+              Privacy-First Design
             </span>
           </div>
         </div>
