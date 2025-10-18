@@ -8,12 +8,19 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 import json
 from mem0 import MemoryClient
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Load environment variables
+project_root = Path(__file__).parent.parent
+env_path = project_root / ".env"
+load_dotenv(env_path)
 
 class Mem0Client:
     """Client for direct mem0 memory operations using MemoryClient"""
     
     def __init__(self):
-        # Initialize mem0 with MemoryClient
+        # Initialize mem0 with MemoryClient (using cloud API)
         self.memory = MemoryClient()
         
     async def add_memory(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:

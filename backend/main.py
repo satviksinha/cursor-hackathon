@@ -490,6 +490,76 @@ async def get_personality_profile(user_id: str):
         logger.error(f"Get personality profile error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+async def extract_and_store_preferences(user_id: str, user_message: str, assistant_message: str):
+    """Extract user preferences from conversation and store in mem0"""
+    try:
+        from openai import AsyncOpenAI
+        openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        
+        # Use OpenAI to extract preferences from the conversation
+        extraction_prompt = f"""
+        Analyze this conversation and extract any user preferences, interests, or important information that should be remembered for future conversations.
+
+        User message: "{user_message}"
+        Assistant response: "{assistant_message}"
+
+        Extract preferences in this format:
+        1. Communication style preferences (e.g., "prefers detailed explanations", "likes concise responses")
+        2. Topic interests (e.g., "interested in AI", "likes cooking")
+        3. Specific requests or requirements (e.g., "wants code examples", "prefers visual explanations")
+        4. Personal information shared (e.g., "works in tech", "lives in California")
+
+        Return only the extracted preferences as a JSON object with categories:
+        {{
+            "communication_style": ["preference1", "preference2"],
+            "interests": ["interest1", "interest2"],
+            "requirements": ["requirement1", "requirement2"],
+            "personal_info": ["info1", "info2"]
+        }}
+
+        If no clear preferences are found, return an empty object {{}}.
+        """
+        
+        response = await openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a preference extraction assistant. Extract user preferences from conversations."},
+                {"role": "user", "content": extraction_prompt}
+            ],
+            max_tokens=300,
+            temperature=0.3
+        )
+        
+        preferences_text = response.choices[0].message.content.strip()
+        
+        # Try to parse as JSON
+        try:
+            import json
+            preferences = json.loads(preferences_text)
+            
+            # Store each category of preferences in mem0
+            for category, items in preferences.items():
+                if items and len(items) > 0:
+                    for item in items:
+                        memory_content = f"User {user_id} {category.replace('_', ' ')}: {item}"
+                        await mem0_client.add_memory(
+                            content=memory_content,
+                            metadata={
+                                "category": "user_preferences",
+                                "preference_type": category,
+                                "user_id": user_id,
+                                "timestamp": datetime.now().isoformat()
+                            }
+                        )
+                        logger.info(f"Stored preference: {memory_content}")
+                        
+        except json.JSONDecodeError:
+            logger.warning(f"Failed to parse preferences JSON: {preferences_text}")
+            
+    except Exception as e:
+        logger.error(f"Preference extraction error: {e}")
+        raise
+
 @app.post("/api/chat/personalized/{user_id}")
 async def personalized_chat(user_id: str, chat_message: PersonalizedChatMessage):
     """Send a personalized chat message based on user's personality profile"""
@@ -657,6 +727,24 @@ async def personalized_chat(user_id: str, chat_message: PersonalizedChatMessage)
                 except Exception as fallback_error:
                     logger.warning(f"Fallback search failed: {fallback_error}")
         
+        # Retrieve stored user preferences
+        preferences_context = ""
+        try:
+            preferences_result = await mem0_client.search_memory(
+                query=f"{user_id} preferences communication style interests requirements personal info",
+                limit=10,
+                user_id=user_id
+            )
+            
+            if preferences_result.get("memories"):
+                preferences_context = "\n\nUser Preferences & Context:\n"
+                for memory in preferences_result["memories"]:
+                    memory_content = memory.get("memory", "")
+                    if "preferences" in memory_content.lower() or "communication" in memory_content.lower() or "interests" in memory_content.lower():
+                        preferences_context += f"- {memory_content}\n"
+        except Exception as pref_error:
+            logger.warning(f"Failed to retrieve preferences: {pref_error}")
+        
         # Generate response using OpenAI with personality context
         from openai import AsyncOpenAI
         openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -676,9 +764,9 @@ async def personalized_chat(user_id: str, chat_message: PersonalizedChatMessage)
                 for result in results:
                     search_context += f"- {result.get('title', 'No title')}: {result.get('text', 'No description')[:200]}...\n"
         
-        system_prompt = f"""You are a personalized AI assistant. {personality_context}{search_context}
+        system_prompt = f"""You are a personalized AI assistant. {personality_context}{search_context}{preferences_context}
 
-Respond to the user's message in a way that matches their personality profile.
+Respond to the user's message in a way that matches their personality profile and respects their preferences.
 Weave the diverse search insights naturally into your response. Challenge the user's 
 perspective when appropriate based on their personality profile. Reference specific 
 sources when relevant. Be conversational and helpful."""
@@ -696,6 +784,12 @@ sources when relevant. Be conversational and helpful."""
         )
         
         assistant_message = response.choices[0].message.content
+        
+        # Extract and store user preferences from the conversation
+        try:
+            await extract_and_store_preferences(user_id, chat_message.message, assistant_message)
+        except Exception as pref_error:
+            logger.warning(f"Failed to extract preferences: {pref_error}")
         
         return {
             "status": "success",
@@ -909,6 +1003,26 @@ async def upload_voice(user_id: str, file: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"Voice upload error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/debug/preferences/{user_id}")
+async def debug_preferences(user_id: str):
+    """Debug endpoint to see all stored preferences for a user"""
+    try:
+        # Get all preferences for the user
+        preferences_result = await mem0_client.search_memory(
+            query=f"{user_id} preferences communication style interests requirements personal info",
+            limit=20,
+            user_id=user_id
+        )
+        
+        return {
+            "user_id": user_id,
+            "preferences": preferences_result,
+            "total_preferences": len(preferences_result.get("memories", []))
+        }
+    except Exception as e:
+        logger.error(f"Debug preferences error: {str(e)}")
+        return {"error": str(e)}
 
 @app.get("/api/debug/memories/{user_id}")
 async def debug_memories(user_id: str):
