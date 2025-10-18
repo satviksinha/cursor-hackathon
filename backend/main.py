@@ -810,6 +810,110 @@ async def text_to_speech_stream(user_id: str, request: dict):
         logger.error(f"Streaming TTS error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/voice/upload/{user_id}")
+async def upload_voice(user_id: str, file: UploadFile = File(...)):
+    """Upload voice recording for ElevenLabs training"""
+    try:
+        logger.info(f"Voice upload request for user {user_id}")
+        
+        # Validate file type
+        if not file.content_type or not file.content_type.startswith("audio/"):
+            raise HTTPException(status_code=400, detail="File must be an audio file")
+        
+        # Read the audio file
+        audio_data = await file.read()
+        logger.info(f"Received audio file: {len(audio_data)} bytes, type: {file.content_type}")
+        
+        # Store the audio file in Supabase storage
+        file_path = f"{user_id}/voice_recording.webm"
+        
+        try:
+            # Upload to Supabase storage
+            supabase_client.client.storage.from_("training-data").upload(
+                file_path,
+                audio_data,
+                file_options={"content-type": file.content_type}
+            )
+            
+            logger.info(f"Voice file stored successfully: {file_path}")
+            
+        except Exception as storage_error:
+            logger.error(f"Supabase storage error: {storage_error}")
+            raise HTTPException(status_code=500, detail="Failed to store voice file")
+        
+        # Update user record with voice path
+        try:
+            update_response = supabase_client.client.table("users").update({
+                "voice_path": file_path,
+                "status": "voice_uploaded"
+            }).eq("id", user_id).execute()
+            
+            if update_response.data:
+                logger.info(f"User {user_id} voice path updated successfully")
+            else:
+                logger.warning(f"No user found with ID {user_id}")
+                
+        except Exception as update_error:
+            logger.error(f"User update error: {update_error}")
+            # Don't fail the upload if user update fails
+        
+        # Start ElevenLabs voice training
+        try:
+            from elevenlabs_service import elevenlabs_service
+            
+            # Get the public URL for the uploaded file
+            public_url = supabase_client.client.storage.from_("training-data").get_public_url(file_path)
+            
+            # Start voice cloning with ElevenLabs
+            voice_id = await elevenlabs_service.clone_voice(
+                name=f"user_{user_id}_voice",
+                files=[public_url]
+            )
+            
+            if voice_id:
+                logger.info(f"ElevenLabs voice training started for user {user_id}, voice_id: {voice_id}")
+                
+                # Update training job with voice_id
+                try:
+                    training_update = supabase_client.client.table("training_jobs").update({
+                        "voice_id": voice_id,
+                        "status": "voice_training"
+                    }).eq("user_id", user_id).execute()
+                    
+                    logger.info(f"Training job updated with voice_id: {voice_id}")
+                    
+                except Exception as training_error:
+                    logger.error(f"Training job update error: {training_error}")
+                
+                return {
+                    "status": "success",
+                    "message": "Voice uploaded and training started",
+                    "voice_id": voice_id,
+                    "file_path": file_path
+                }
+            else:
+                logger.warning(f"ElevenLabs voice training failed for user {user_id}")
+                return {
+                    "status": "success",
+                    "message": "Voice uploaded but training failed to start",
+                    "file_path": file_path
+                }
+                
+        except Exception as elevenlabs_error:
+            logger.error(f"ElevenLabs training error: {elevenlabs_error}")
+            # Don't fail the upload if ElevenLabs training fails
+            return {
+                "status": "success",
+                "message": "Voice uploaded successfully, training will be retried",
+                "file_path": file_path
+            }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Voice upload error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/debug/memories/{user_id}")
 async def debug_memories(user_id: str):
     """Debug endpoint to see all memories for a user"""

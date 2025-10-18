@@ -41,13 +41,14 @@ export default function Home() {
         >
           Forget generic AI assistants. We've built a system that learns your{" "}
           <span className="text-blue-400 font-semibold">
+            voice through ElevenLabs training
+          </span>{" "}
+          and your{" "}
+          <span className="text-purple-400 font-semibold">
             personality through interactive questionnaires
           </span>{" "}
-          and adapts every response to match your unique traits. Your data stays{" "}
-          <span className="text-purple-400 font-semibold">
-            local and private
-          </span>{" "}
-          while getting truly personalized assistance.
+          to create a truly personalized AI that speaks in your voice and adapts
+          to your unique traits.
         </motion.p>
       </motion.div>
 
@@ -62,13 +63,13 @@ export default function Home() {
           whileHover={{ scale: 1.05, y: -5 }}
           className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-2xl p-6 text-center shadow-lg hover:shadow-xl transition-all duration-200"
         >
-          <Brain className="w-12 h-12 text-blue-400 mx-auto mb-4" />
+          <Mic className="w-12 h-12 text-blue-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-zinc-200 mb-2">
-            Big Five Assessment
+            Voice Cloning
           </h3>
           <p className="text-zinc-400 text-sm leading-relaxed">
-            Scientifically-validated personality questionnaire with 20
-            questions.
+            Record your voice and train ElevenLabs to speak in your unique
+            voice.
           </p>
         </motion.div>
 
@@ -76,13 +77,13 @@ export default function Home() {
           whileHover={{ scale: 1.05, y: -5 }}
           className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-2xl p-6 text-center shadow-lg hover:shadow-xl transition-all duration-200"
         >
-          <Mic className="w-12 h-12 text-green-400 mx-auto mb-4" />
+          <Brain className="w-12 h-12 text-green-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-zinc-200 mb-2">
-            Local-First Privacy
+            Big Five Assessment
           </h3>
           <p className="text-zinc-400 text-sm leading-relaxed">
-            Personality profiles stored locally with mem0 - never leaves your
-            device.
+            Scientifically-validated personality questionnaire with 20
+            questions.
           </p>
         </motion.div>
 
@@ -120,14 +121,14 @@ export default function Home() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.8, duration: 0.5 }}
       >
-        <Link href="/onboarding/demo-user">
+        <Link href="/voice-upload/demo-user">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-4 px-10 rounded-2xl text-lg shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-200"
           >
-            <Brain className="w-6 h-6 inline mr-2" />
-            Discover Your Personality
+            <Mic className="w-6 h-6 inline mr-2" />
+            Start Voice Training
           </motion.button>
         </Link>
       </motion.div>
@@ -145,19 +146,19 @@ export default function Home() {
         <div className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-2xl p-6 max-w-4xl shadow-lg">
           <div className="flex flex-wrap justify-center items-center gap-4 text-sm text-zinc-300">
             <span className="bg-blue-600/20 px-3 py-1 rounded-full">
-              OpenAI GPT-4o-mini
+              ElevenLabs Voice Cloning
             </span>
             <span className="bg-green-600/20 px-3 py-1 rounded-full">
-              mem0 Local Storage
+              OpenAI GPT-4o-mini
             </span>
             <span className="bg-purple-600/20 px-3 py-1 rounded-full">
-              Exa.ai Search
+              mem0 Local Storage
             </span>
             <span className="bg-yellow-600/20 px-3 py-1 rounded-full">
-              Big Five Assessment
+              Exa.ai Search
             </span>
             <span className="bg-red-600/20 px-3 py-1 rounded-full">
-              Privacy-First Design
+              Big Five Assessment
             </span>
           </div>
         </div>
