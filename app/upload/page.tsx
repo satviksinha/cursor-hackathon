@@ -157,7 +157,7 @@ function UploadPageContent() {
   const allFilesUploaded = files.text && files.photo && files.voice;
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen bg-zinc-950 p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <motion.div
@@ -165,10 +165,13 @@ function UploadPageContent() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/25">
+            <Upload className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 tracking-tight">
             Upload Your Digital DNA
           </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+          <p className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
             Provide the raw materials for your neural resurrection. We'll
             extract your personality, voice, and appearance.
           </p>
@@ -183,18 +186,18 @@ function UploadPageContent() {
             transition={{ delay: 0.1 }}
             className="space-y-4"
           >
-            <h3 className="text-lg font-semibold text-white flex items-center">
+            <h3 className="text-lg font-semibold text-zinc-200 flex items-center">
               <FileText className="w-5 h-5 mr-2 text-blue-400" />
               Text Data
             </h3>
             <div
               {...getTextRootProps()}
-              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
+              className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 ${
                 isTextDragActive
                   ? "border-blue-400 bg-blue-400/10"
                   : files.text
                   ? "border-green-400 bg-green-400/10"
-                  : "border-gray-600 hover:border-gray-500"
+                  : "border-zinc-700 hover:border-zinc-600 bg-zinc-900/40"
               }`}
             >
               <input {...getTextInputProps()} />
@@ -224,18 +227,18 @@ function UploadPageContent() {
             transition={{ delay: 0.2 }}
             className="space-y-4"
           >
-            <h3 className="text-lg font-semibold text-white flex items-center">
+            <h3 className="text-lg font-semibold text-zinc-200 flex items-center">
               <Camera className="w-5 h-5 mr-2 text-purple-400" />
               Profile Photo
             </h3>
             <div
               {...getPhotoRootProps()}
-              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
+              className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 ${
                 isPhotoDragActive
                   ? "border-purple-400 bg-purple-400/10"
                   : files.photo
                   ? "border-green-400 bg-green-400/10"
-                  : "border-gray-600 hover:border-gray-500"
+                  : "border-zinc-700 hover:border-zinc-600 bg-zinc-900/40"
               }`}
             >
               <input {...getPhotoInputProps()} />
@@ -265,18 +268,18 @@ function UploadPageContent() {
             transition={{ delay: 0.3 }}
             className="space-y-4"
           >
-            <h3 className="text-lg font-semibold text-white flex items-center">
+            <h3 className="text-lg font-semibold text-zinc-200 flex items-center">
               <Mic className="w-5 h-5 mr-2 text-green-400" />
               Voice Sample
             </h3>
             <div
               {...getVoiceRootProps()}
-              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
+              className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 ${
                 isVoiceDragActive
                   ? "border-green-400 bg-green-400/10"
                   : files.voice
                   ? "border-green-400 bg-green-400/10"
-                  : "border-gray-600 hover:border-gray-500"
+                  : "border-zinc-700 hover:border-zinc-600 bg-zinc-900/40"
               }`}
             >
               <input {...getVoiceInputProps()} />
@@ -307,14 +310,18 @@ function UploadPageContent() {
             animate={{ opacity: 1 }}
             className="mb-8"
           >
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-white font-medium">Uploading...</span>
-                <span className="text-gray-400">{uploadProgress}%</span>
+            <div className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-2xl p-6 shadow-lg">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-zinc-200 font-semibold">
+                  Uploading...
+                </span>
+                <span className="text-zinc-400 font-medium">
+                  {uploadProgress}%
+                </span>
               </div>
-              <div className="w-full bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-zinc-800/50 rounded-full h-3">
                 <motion.div
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full"
+                  className="bg-gradient-to-r from-blue-400 to-purple-500 h-3 rounded-full shadow-lg"
                   initial={{ width: 0 }}
                   animate={{ width: `${uploadProgress}%` }}
                   transition={{ duration: 0.3 }}
@@ -336,10 +343,10 @@ function UploadPageContent() {
             disabled={!allFilesUploaded || isUploading}
             whileHover={allFilesUploaded && !isUploading ? { scale: 1.05 } : {}}
             whileTap={allFilesUploaded && !isUploading ? { scale: 0.95 } : {}}
-            className={`px-8 py-4 rounded-full font-bold text-lg transition-all ${
+            className={`px-10 py-4 rounded-2xl font-semibold text-lg transition-all duration-200 ${
               allFilesUploaded && !isUploading
-                ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-2xl pulse-glow"
-                : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                ? "bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30"
+                : "bg-zinc-800/50 text-zinc-500 cursor-not-allowed"
             }`}
           >
             {isUploading ? (

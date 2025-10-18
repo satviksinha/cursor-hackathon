@@ -135,18 +135,21 @@ export default function TrainingPage({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8">
-      <div className="max-w-2xl w-full">
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-8">
+      <div className="max-w-3xl w-full">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/25">
+            <Brain className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 tracking-tight">
             Neural Resurrection
           </h1>
-          <p className="text-xl text-gray-300">
+          <p className="text-xl text-zinc-400 font-medium">
             We're processing your digital consciousness with RAG...
           </p>
         </motion.div>
@@ -156,7 +159,7 @@ export default function TrainingPage({
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8"
+          className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-3xl p-8 shadow-lg"
         >
           {/* Status Icon */}
           <div className="text-center mb-6">
@@ -185,10 +188,10 @@ export default function TrainingPage({
 
           {/* Status Text */}
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold text-white mb-2">
+            <h2 className="text-2xl font-semibold text-zinc-200 mb-3">
               {getStatusText()}
             </h2>
-            <p className="text-gray-400">
+            <p className="text-zinc-400 leading-relaxed">
               {(status.training_status || status.status) === "running"
                 ? "Creating embeddings and indexing your communication style..."
                 : (status.training_status || status.status) === "succeeded"
@@ -201,15 +204,17 @@ export default function TrainingPage({
 
           {/* Progress Bar */}
           <div className="mb-8">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-gray-400">Progress</span>
-              <span className="text-sm text-gray-400">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-sm text-zinc-400 font-medium">
+                Progress
+              </span>
+              <span className="text-sm text-zinc-400 font-semibold">
                 {status.training_progress || status.progress}%
               </span>
             </div>
-            <div className="w-full bg-gray-700 rounded-full h-3">
+            <div className="w-full bg-zinc-800/50 rounded-full h-3">
               <motion.div
-                className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-3 rounded-full"
+                className="bg-gradient-to-r from-blue-400 to-purple-500 h-3 rounded-full shadow-lg"
                 initial={{ width: 0 }}
                 animate={{
                   width: `${status.training_progress || status.progress}%`,
@@ -228,10 +233,10 @@ export default function TrainingPage({
                 disabled={isStartingTraining}
                 whileHover={!isStartingTraining ? { scale: 1.05 } : {}}
                 whileTap={!isStartingTraining ? { scale: 0.95 } : {}}
-                className={`px-8 py-4 rounded-full font-bold text-lg transition-all ${
+                className={`px-10 py-4 rounded-2xl font-semibold text-lg transition-all duration-200 ${
                   !isStartingTraining
-                    ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-2xl"
-                    : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                    ? "bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30"
+                    : "bg-zinc-800/50 text-zinc-500 cursor-not-allowed"
                 }`}
               >
                 {isStartingTraining ? (
@@ -251,12 +256,12 @@ export default function TrainingPage({
 
           {/* Error Display */}
           {status.error && (
-            <div className="mb-8 p-4 bg-red-900/20 border border-red-500/30 rounded-xl">
-              <div className="flex items-center">
+            <div className="mb-8 p-6 bg-red-900/20 border border-red-500/30 rounded-2xl">
+              <div className="flex items-center mb-3">
                 <AlertCircle className="w-5 h-5 text-red-400 mr-2" />
-                <span className="text-red-400 font-medium">Error:</span>
+                <span className="text-red-400 font-semibold">Error:</span>
               </div>
-              <p className="text-red-300 text-sm mt-1">
+              <p className="text-red-300 text-sm leading-relaxed">
                 {(() => {
                   if (typeof status.error === "string") {
                     return status.error;

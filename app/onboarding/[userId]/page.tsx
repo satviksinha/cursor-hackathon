@@ -141,10 +141,12 @@ export default function OnboardingPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white text-lg">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/25">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
+          </div>
+          <p className="text-zinc-200 text-xl font-semibold">
             Loading personality assessment...
           </p>
         </div>
@@ -154,17 +156,32 @@ export default function OnboardingPage() {
 
   if (showResults && profile && insights) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-zinc-950 p-8">
+        <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
+            className="text-center mb-12"
           >
-            <h1 className="text-4xl font-bold text-white mb-4">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/25">
+              <svg
+                className="w-10 h-10 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h1 className="text-4xl font-bold text-white mb-4 tracking-tight">
               Your Personality Profile
             </h1>
-            <p className="text-purple-200 text-lg">
+            <p className="text-xl text-zinc-400 font-medium">
               Discover what makes you unique and how it shapes your preferences
             </p>
           </motion.div>
@@ -173,9 +190,9 @@ export default function OnboardingPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 mb-8"
+            className="bg-zinc-900/60 backdrop-blur-xl rounded-3xl p-8 mb-8 border border-zinc-800/50 shadow-lg"
           >
-            <h2 className="text-2xl font-bold text-white mb-6 text-center">
+            <h2 className="text-2xl font-bold text-zinc-200 mb-8 text-center">
               Big Five Personality Traits
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -223,10 +240,10 @@ export default function OnboardingPage() {
                       </span>
                     </div>
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">
+                  <h3 className="text-lg font-semibold text-zinc-200 mb-2">
                     {getTraitLabel(trait)}
                   </h3>
-                  <p className="text-sm text-purple-200">
+                  <p className="text-sm text-zinc-400 font-medium">
                     {score >= 70 ? "High" : score >= 30 ? "Medium" : "Low"}
                   </p>
                 </div>
@@ -239,24 +256,24 @@ export default function OnboardingPage() {
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-white/10 backdrop-blur-lg rounded-2xl p-6"
+              className="bg-zinc-900/60 backdrop-blur-xl rounded-3xl p-8 border border-zinc-800/50 shadow-lg"
             >
-              <h3 className="text-xl font-bold text-white mb-4">
+              <h3 className="text-xl font-bold text-zinc-200 mb-6">
                 Primary Traits
               </h3>
               {insights.primary_traits.map((trait, index) => (
-                <div key={index} className="mb-3">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-white font-medium">
+                <div key={index} className="mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-zinc-200 font-semibold">
                       {getTraitLabel(trait.trait)}
                     </span>
-                    <span className="text-purple-300">
+                    <span className="text-zinc-400 font-bold">
                       {Math.round(trait.score)}
                     </span>
                   </div>
-                  <div className="w-full bg-white/20 rounded-full h-2">
+                  <div className="w-full bg-zinc-800/50 rounded-full h-3">
                     <div
-                      className="bg-gradient-to-r from-purple-400 to-purple-600 h-2 rounded-full"
+                      className="bg-gradient-to-r from-blue-400 to-purple-500 h-3 rounded-full shadow-lg"
                       style={{ width: `${trait.score}%` }}
                     ></div>
                   </div>
@@ -267,19 +284,19 @@ export default function OnboardingPage() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-white/10 backdrop-blur-lg rounded-2xl p-6"
+              className="bg-zinc-900/60 backdrop-blur-xl rounded-3xl p-8 border border-zinc-800/50 shadow-lg"
             >
-              <h3 className="text-xl font-bold text-white mb-4">
+              <h3 className="text-xl font-bold text-zinc-200 mb-6">
                 Content Preferences
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {insights.content_preferences.map((preference, index) => (
                   <div
                     key={index}
-                    className="flex items-center space-x-2 text-purple-200"
+                    className="flex items-start space-x-3 text-zinc-300"
                   >
-                    <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                    <span>{preference}</span>
+                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <span className="leading-relaxed">{preference}</span>
                   </div>
                 ))}
               </div>
@@ -290,11 +307,11 @@ export default function OnboardingPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mt-8 space-x-4"
+            className="text-center mt-12 space-x-6"
           >
             <button
               onClick={() => router.push(`/chat/${userId}`)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-3 rounded-full font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-200"
+              className="bg-gradient-to-br from-blue-500 to-purple-600 text-white px-10 py-4 rounded-2xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 text-lg"
             >
               Start Personalized Chat
             </button>
@@ -304,7 +321,7 @@ export default function OnboardingPage() {
                 setCurrentQuestionIndex(0);
                 setAnswers({});
               }}
-              className="bg-white/20 text-white px-8 py-3 rounded-full font-semibold hover:bg-white/30 transition-all duration-200"
+              className="bg-zinc-800/50 text-zinc-300 px-10 py-4 rounded-2xl font-semibold hover:bg-zinc-700/50 hover:text-zinc-200 transition-all duration-200 border border-zinc-700/50 hover:border-zinc-600/50 text-lg"
             >
               Retake Assessment
             </button>
@@ -323,10 +340,12 @@ export default function OnboardingPage() {
   // Don't render the questionnaire until questions are loaded
   if (!currentQuestion || questions.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white text-lg">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/25">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
+          </div>
+          <p className="text-zinc-200 text-xl font-semibold">
             Loading personality assessment...
           </p>
         </div>
@@ -335,26 +354,26 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full">
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+      <div className="max-w-3xl w-full">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white/10 backdrop-blur-lg rounded-2xl p-8"
+          className="bg-zinc-900/60 backdrop-blur-xl rounded-3xl p-8 border border-zinc-800/50 shadow-lg"
         >
           {/* Progress Bar */}
           <div className="mb-8">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-white font-medium">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-zinc-200 font-semibold text-lg">
                 Question {currentQuestionIndex + 1} of {questions.length}
               </span>
-              <span className="text-purple-200">
+              <span className="text-zinc-400 font-medium">
                 {Math.round(progress)}% Complete
               </span>
             </div>
-            <div className="w-full bg-white/20 rounded-full h-2">
+            <div className="w-full bg-zinc-800/50 rounded-full h-3">
               <motion.div
-                className="bg-gradient-to-r from-purple-400 to-purple-600 h-2 rounded-full"
+                className="bg-gradient-to-r from-blue-400 to-purple-500 h-3 rounded-full shadow-lg"
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.3 }}
@@ -371,7 +390,7 @@ export default function OnboardingPage() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <h2 className="text-2xl font-bold text-white mb-8 text-center">
+              <h2 className="text-2xl font-bold text-zinc-200 mb-8 text-center leading-relaxed">
                 {currentQuestion?.text}
               </h2>
 
@@ -381,16 +400,16 @@ export default function OnboardingPage() {
                   <motion.button
                     key={score}
                     onClick={() => handleAnswer(score)}
-                    className={`w-full p-4 rounded-lg border-2 transition-all duration-200 ${
+                    className={`w-full p-5 rounded-2xl border-2 transition-all duration-200 ${
                       answers[currentQuestion.id] === score
-                        ? "border-purple-400 bg-purple-400/20 text-white"
-                        : "border-white/30 text-white/70 hover:border-white/50 hover:text-white"
+                        ? "border-blue-400 bg-blue-400/20 text-zinc-200 shadow-lg shadow-blue-400/20"
+                        : "border-zinc-700/50 text-zinc-400 hover:border-zinc-600/50 hover:text-zinc-300 hover:bg-zinc-800/30"
                     }`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-lg font-medium">
+                      <span className="text-lg font-semibold">
                         {score === 1 && "Strongly Disagree"}
                         {score === 2 && "Disagree"}
                         {score === 3 && "Neutral"}
@@ -410,10 +429,10 @@ export default function OnboardingPage() {
             <button
               onClick={prevQuestion}
               disabled={currentQuestionIndex === 0}
-              className={`px-6 py-2 rounded-full font-semibold transition-all duration-200 ${
+              className={`px-8 py-3 rounded-2xl font-semibold transition-all duration-200 ${
                 currentQuestionIndex === 0
-                  ? "bg-white/10 text-white/30 cursor-not-allowed"
-                  : "bg-white/20 text-white hover:bg-white/30"
+                  ? "bg-zinc-800/30 text-zinc-500 cursor-not-allowed"
+                  : "bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700/50 hover:text-zinc-200 border border-zinc-700/50"
               }`}
             >
               Previous
@@ -423,10 +442,10 @@ export default function OnboardingPage() {
               <button
                 onClick={nextQuestion}
                 disabled={!answers[currentQuestion.id]}
-                className={`px-6 py-2 rounded-full font-semibold transition-all duration-200 ${
+                className={`px-8 py-3 rounded-2xl font-semibold transition-all duration-200 ${
                   !answers[currentQuestion.id]
-                    ? "bg-white/10 text-white/30 cursor-not-allowed"
-                    : "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                    ? "bg-zinc-800/30 text-zinc-500 cursor-not-allowed"
+                    : "bg-gradient-to-br from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30"
                 }`}
               >
                 Next
@@ -435,10 +454,10 @@ export default function OnboardingPage() {
               <button
                 onClick={submitAssessment}
                 disabled={isSubmitting || !answers[currentQuestion.id]}
-                className={`px-6 py-2 rounded-full font-semibold transition-all duration-200 ${
+                className={`px-8 py-3 rounded-2xl font-semibold transition-all duration-200 ${
                   isSubmitting || !answers[currentQuestion.id]
-                    ? "bg-white/10 text-white/30 cursor-not-allowed"
-                    : "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600"
+                    ? "bg-zinc-800/30 text-zinc-500 cursor-not-allowed"
+                    : "bg-gradient-to-br from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30"
                 }`}
               >
                 {isSubmitting ? "Analyzing..." : "Complete Assessment"}

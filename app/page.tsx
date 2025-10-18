@@ -9,16 +9,20 @@ export default function Home() {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8">
+    <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-8">
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="text-center mb-12"
+        className="text-center mb-16"
       >
+        <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg shadow-blue-500/25">
+          <Brain className="w-12 h-12 text-white" />
+        </div>
+
         <motion.h1
-          className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-6"
+          className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-6 tracking-tight"
           animate={{
             backgroundPosition: isHovered ? "200% 0%" : "0% 0%",
           }}
@@ -33,7 +37,7 @@ export default function Home() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.8 }}
-          className="text-xl md:text-2xl text-gray-300 mb-8 max-w-4xl mx-auto"
+          className="text-xl md:text-2xl text-zinc-400 mb-8 max-w-4xl mx-auto leading-relaxed"
         >
           Forget generic AI assistants. We've built a system that learns your{" "}
           <span className="text-blue-400 font-semibold">
@@ -56,13 +60,13 @@ export default function Home() {
       >
         <motion.div
           whileHover={{ scale: 1.05, y: -5 }}
-          className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 text-center"
+          className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-2xl p-6 text-center shadow-lg hover:shadow-xl transition-all duration-200"
         >
           <Brain className="w-12 h-12 text-blue-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">
+          <h3 className="text-lg font-semibold text-zinc-200 mb-2">
             Big Five Assessment
           </h3>
-          <p className="text-gray-400 text-sm">
+          <p className="text-zinc-400 text-sm leading-relaxed">
             Scientifically-validated personality questionnaire with 20
             questions.
           </p>
@@ -70,13 +74,13 @@ export default function Home() {
 
         <motion.div
           whileHover={{ scale: 1.05, y: -5 }}
-          className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 text-center"
+          className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-2xl p-6 text-center shadow-lg hover:shadow-xl transition-all duration-200"
         >
           <Mic className="w-12 h-12 text-green-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">
+          <h3 className="text-lg font-semibold text-zinc-200 mb-2">
             Local-First Privacy
           </h3>
-          <p className="text-gray-400 text-sm">
+          <p className="text-zinc-400 text-sm leading-relaxed">
             Personality profiles stored locally with mem0 - never leaves your
             device.
           </p>
@@ -84,13 +88,13 @@ export default function Home() {
 
         <motion.div
           whileHover={{ scale: 1.05, y: -5 }}
-          className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 text-center"
+          className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-2xl p-6 text-center shadow-lg hover:shadow-xl transition-all duration-200"
         >
           <Camera className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">
+          <h3 className="text-lg font-semibold text-zinc-200 mb-2">
             Personalized Responses
           </h3>
-          <p className="text-gray-400 text-sm">
+          <p className="text-zinc-400 text-sm leading-relaxed">
             AI responses tailored to your unique personality traits and
             preferences.
           </p>
@@ -98,13 +102,13 @@ export default function Home() {
 
         <motion.div
           whileHover={{ scale: 1.05, y: -5 }}
-          className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 text-center"
+          className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-2xl p-6 text-center shadow-lg hover:shadow-xl transition-all duration-200"
         >
           <Zap className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">
+          <h3 className="text-lg font-semibold text-zinc-200 mb-2">
             Smart Search
           </h3>
-          <p className="text-gray-400 text-sm">
+          <p className="text-zinc-400 text-sm leading-relaxed">
             Search results customized based on your personality preferences.
           </p>
         </motion.div>
@@ -120,7 +124,7 @@ export default function Home() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-full text-lg shadow-2xl pulse-glow"
+            className="bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-4 px-10 rounded-2xl text-lg shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-200"
           >
             <Brain className="w-6 h-6 inline mr-2" />
             Discover Your Personality
@@ -135,11 +139,11 @@ export default function Home() {
         transition={{ delay: 1, duration: 0.8 }}
         className="mt-16 text-center"
       >
-        <h2 className="text-2xl font-bold text-white mb-6">
+        <h2 className="text-2xl font-bold text-zinc-200 mb-6">
           Technical Architecture
         </h2>
-        <div className="bg-gray-800/30 backdrop-blur-sm border border-gray-700 rounded-xl p-6 max-w-4xl">
-          <div className="flex flex-wrap justify-center items-center gap-4 text-sm text-gray-300">
+        <div className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-2xl p-6 max-w-4xl shadow-lg">
+          <div className="flex flex-wrap justify-center items-center gap-4 text-sm text-zinc-300">
             <span className="bg-blue-600/20 px-3 py-1 rounded-full">
               OpenAI GPT-4o-mini
             </span>
