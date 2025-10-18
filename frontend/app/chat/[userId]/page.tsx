@@ -56,6 +56,9 @@ export default function ChatPage() {
   const [isPlayingVoice, setIsPlayingVoice] = useState<string | null>(null);
   const [showLiveBrowser, setShowLiveBrowser] = useState(false);
   const [browserSearchQuery, setBrowserSearchQuery] = useState("");
+  const [preloadedSearchResults, setPreloadedSearchResults] = useState<any[]>(
+    []
+  );
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -120,7 +123,7 @@ export default function ChatPage() {
         });
 
         // Check if the message contains searchable topics and open browser
-        checkForSearchableTopics(messageText, data.response);
+        await checkForSearchableTopics(messageText, data.response);
       } else {
         const errorData = await response.json();
         toast.error(errorData.detail || "Failed to send message");
@@ -161,7 +164,7 @@ export default function ChatPage() {
     audioRef.current = null;
   };
 
-  const checkForSearchableTopics = (
+  const checkForSearchableTopics = async (
     userMessage: string,
     aiResponse: string
   ) => {
@@ -247,7 +250,48 @@ export default function ChatPage() {
         searchQuery = userMessage;
       }
 
+      // Show loading toast first
+      toast.loading("🔍 Searching for results...", {
+        duration: 2000,
+      });
+
+      // Pre-load search results before showing browser
+      try {
+        const API_BASE_URL =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+        const response = await fetch(`${API_BASE_URL}/api/exa/search`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: searchQuery,
+            num_results: 3,
+            search_type: "auto",
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.results && data.results.length > 0) {
+            // Set search query and pre-loaded results, then show browser
+            setBrowserSearchQuery(searchQuery);
+            setPreloadedSearchResults(data.results);
+            setShowLiveBrowser(true);
+
+            // Show success toast
+            toast.success("🔍 Found results! Opening live browser...", {
+              duration: 3000,
+            });
+            return;
+          }
+        }
+      } catch (error) {
+        console.log("Pre-search error:", error);
+      }
+
+      // Fallback: show browser even if pre-search failed
       setBrowserSearchQuery(searchQuery);
+      setPreloadedSearchResults([]); // Clear any previous results
       setShowLiveBrowser(true);
 
       // Show a toast notification
@@ -349,6 +393,7 @@ export default function ChatPage() {
             searchQuery={browserSearchQuery}
             autoSearch={true}
             embedded={true}
+            preloadedResults={preloadedSearchResults}
           />
         </div>
       )}

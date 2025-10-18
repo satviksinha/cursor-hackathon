@@ -21,6 +21,7 @@ interface LiveBrowserProps {
   searchQuery?: string;
   autoSearch?: boolean;
   embedded?: boolean;
+  preloadedResults?: any[];
 }
 
 export function LiveBrowser({
@@ -29,6 +30,7 @@ export function LiveBrowser({
   searchQuery = "",
   autoSearch = true,
   embedded = false,
+  preloadedResults = [],
 }: LiveBrowserProps) {
   const [currentUrl, setCurrentUrl] = useState("about:blank");
   const [searchInput, setSearchInput] = useState(searchQuery);
@@ -40,11 +42,22 @@ export function LiveBrowser({
   const [showSearchResults, setShowSearchResults] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // Initialize with preloaded results when component mounts
+  useEffect(() => {
+    if (preloadedResults && preloadedResults.length > 0) {
+      setSearchResults(preloadedResults);
+      setSearchInput(searchQuery);
+    }
+  }, [preloadedResults, searchQuery]);
+
   // Auto-search when searchQuery changes
   useEffect(() => {
     if (autoSearch && searchQuery && searchQuery !== searchInput) {
       setSearchInput(searchQuery);
-      handleSearch(searchQuery);
+      // Only search if we don't already have results
+      if (searchResults.length === 0) {
+        handleSearch(searchQuery);
+      }
     }
   }, [searchQuery, autoSearch]);
 
