@@ -23,7 +23,6 @@ load_dotenv(env_path)
 # Import our services
 from rag_service import RAGService
 from elevenlabs_service import ElevenLabsService
-from sadtalker_client import SadTalkerClient
 from pipeline import NeuralMarionettePipeline
 from supabase_client import SupabaseClient
 from mem0_client import mem0_client
@@ -90,11 +89,9 @@ async def log_requests(request: Request, call_next):
 supabase_client = SupabaseClient()
 rag_service = RAGService(supabase_client)
 elevenlabs_service = ElevenLabsService()
-sadtalker_client = SadTalkerClient()
 pipeline = NeuralMarionettePipeline(
     rag_service=rag_service,
     elevenlabs_service=elevenlabs_service,
-    sadtalker_client=sadtalker_client,
     supabase_client=supabase_client
 )
 
@@ -294,7 +291,6 @@ async def health_check():
         "services": {
             "rag": await rag_service.health_check(),
             "elevenlabs": await elevenlabs_service.health_check(),
-            "sadtalker": await sadtalker_client.health_check(),
             "supabase": await supabase_client.health_check()
         }
     }

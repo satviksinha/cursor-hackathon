@@ -85,32 +85,6 @@ class ExaClient:
                 "results": []
             }
     
-    async def research_search(self, query: str, num_results: int = 5) -> Dict[str, Any]:
-        """
-        Search for research papers and academic content
-        
-        Args:
-            query: Search query
-            num_results: Number of results to return
-            
-        Returns:
-            Research search results
-        """
-        return await self.search(query, num_results, "research")
-    
-    async def news_search(self, query: str, num_results: int = 5) -> Dict[str, Any]:
-        """
-        Search for news and current events
-        
-        Args:
-            query: Search query
-            num_results: Number of results to return
-            
-        Returns:
-            News search results
-        """
-        return await self.search(query, num_results, "news")
-    
     async def general_search(self, query: str, num_results: int = 5) -> Dict[str, Any]:
         """
         General web search
@@ -155,22 +129,6 @@ class ExaClient:
         result["original_query"] = query
         return result
     
-    async def contrarian_search(self, query: str, num_results: int = 3) -> Dict[str, Any]:
-        """
-        Find opposing viewpoints and contrarian perspectives
-        
-        Args:
-            query: Search query
-            num_results: Number of results to return
-            
-        Returns:
-            Contrarian search results
-        """
-        contrarian_query = f"opposing viewpoint alternative perspective criticism {query}"
-        result = await self.search(contrarian_query, num_results, "search")
-        result["strategy"] = "contrarian"
-        return result
-    
     async def personality_mirror_search(self, query: str, personality_traits: Dict[str, float], num_results: int = 3) -> Dict[str, Any]:
         """
         Find content that matches user's personality profile
@@ -200,39 +158,6 @@ class ExaClient:
         result = await self.search(personality_query, num_results, "search")
         result["strategy"] = "personality_mirror"
         result["traits_used"] = trait_keywords[:3]
-        return result
-    
-    async def deep_dive_search(self, query: str, num_results: int = 3) -> Dict[str, Any]:
-        """
-        Multi-layer research for comprehensive understanding
-        
-        Args:
-            query: Search query
-            num_results: Number of results to return
-            
-        Returns:
-            Deep dive search results
-        """
-        deep_query = f"comprehensive analysis detailed explanation research {query}"
-        result = await self.search(deep_query, num_results, "research")
-        result["strategy"] = "deep_dive"
-        return result
-    
-    async def context_expansion_search(self, query: str, context: str, num_results: int = 3) -> Dict[str, Any]:
-        """
-        Build knowledge graph from conversation context
-        
-        Args:
-            query: Search query
-            context: Conversation context
-            num_results: Number of results to return
-            
-        Returns:
-            Context-expanded search results
-        """
-        expanded_query = f"{query} related topics background context {context}"
-        result = await self.search(expanded_query, num_results, "search")
-        result["strategy"] = "context_expansion"
         return result
 
 

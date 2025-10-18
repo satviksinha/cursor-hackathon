@@ -106,18 +106,35 @@ npm run backend
 
 ```
 neural-marionette/
-├── app/                    # Next.js frontend
-│   ├── page.tsx           # Landing page
-│   ├── onboarding/[userId]/ # Personality assessment
-│   └── chat/[userId]/      # Personalized chat interface
-├── backend/               # FastAPI backend
-│   ├── main.py           # Main API server
-│   ├── mem0_client.py    # Direct mem0 integration
-│   ├── exa_client.py     # Exa.ai search client
+├── frontend/               # Next.js frontend application
+│   ├── app/               # App Router pages
+│   │   ├── page.tsx      # Landing page
+│   │   ├── onboarding/[userId]/ # Personality assessment
+│   │   ├── chat/[userId]/ # Personalized chat interface
+│   │   ├── training/[userId]/ # Training status
+│   │   └── voice-upload/[userId]/ # Voice upload
+│   ├── components/        # Reusable React components
+│   │   ├── ui/           # Basic UI components
+│   │   ├── chat/         # Chat-specific components
+│   │   ├── onboarding/   # Onboarding components
+│   │   └── voice-upload/ # Voice upload components
+│   ├── lib/              # Utility libraries
+│   │   ├── api.ts        # API client
+│   │   ├── auth.tsx      # Authentication
+│   │   └── supabase.ts   # Database client
+│   ├── public/           # Static assets
+│   └── README.md         # Frontend documentation
+├── backend/              # Python FastAPI backend
+│   ├── main.py          # Main API server
+│   ├── mem0_client.py   # Direct mem0 integration
+│   ├── exa_client.py    # Exa.ai search client
 │   ├── personality_assessment.py # Big Five logic
 │   ├── elevenlabs_service.py
 │   └── supabase_client.py
-└── supabase-schema.sql    # Database schema
+├── package.json         # Node.js dependencies & scripts
+├── deploy.sh           # Deployment script
+├── env.example         # Environment variables template
+└── supabase-schema.sql # Database schema
 ```
 
 ## 🔧 API Endpoints

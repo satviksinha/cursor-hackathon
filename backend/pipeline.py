@@ -8,7 +8,6 @@ from datetime import datetime
 
 from rag_service import RAGService
 from elevenlabs_service import ElevenLabsService
-from sadtalker_client import SadTalkerClient
 from supabase_client import SupabaseClient
 
 logger = logging.getLogger(__name__)
@@ -18,12 +17,10 @@ class NeuralMarionettePipeline:
         self,
         rag_service: RAGService,
         elevenlabs_service: ElevenLabsService,
-        sadtalker_client: SadTalkerClient,
         supabase_client: SupabaseClient
     ):
         self.rag_service = rag_service
         self.elevenlabs_service = elevenlabs_service
-        self.sadtalker_client = sadtalker_client
         self.supabase_client = supabase_client
         
     async def process_upload(
@@ -382,24 +379,10 @@ class NeuralMarionettePipeline:
             # Generate video/audio based on preference
             result = {"text": full_response, "audio_generated": len(audio_data) if audio_data else 0}
             
+            # TODO: Re-implement video generation with streaming audio support
             if enable_video:
-                try:
-                    training_data = await self.supabase_client.get_training_data(user_id)
-                    if training_data and training_data.get("photo_data"):
-                        logger.info(f"Debug: Generating video for user {user_id}")
-                        video_data = await self.sadtalker_client.generate_video(
-                            image_data=training_data["photo_data"],
-                            audio_data=audio_data
-                        )
-                        result["video_generated"] = len(video_data)
-                        logger.info(f"Debug: Video generation successful: {len(video_data)} bytes")
-                    else:
-                        logger.warning(f"Debug: No photo data, would send audio only")
-                        result["would_send_audio"] = True
-                except Exception as video_error:
-                    logger.error(f"Debug: Video generation failed: {video_error}")
-                    result["video_error"] = str(video_error)
-                    result["would_send_audio"] = True
+                logger.info(f"Debug: Video generation requested but not implemented")
+                result["video_not_implemented"] = True
             else:
                 logger.info(f"Debug: Video disabled, would send audio only")
                 result["would_send_audio"] = True

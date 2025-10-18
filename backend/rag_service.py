@@ -354,27 +354,6 @@ class RAGService:
             # Fallback: return empty list
             return []
     
-    def estimate_processing_time(self, text_data: str) -> Dict[str, Any]:
-        """Estimate processing time and token usage"""
-        chunks = self.chunk_text(text_data)
-        total_tokens = sum(chunk["token_count"] for chunk in chunks)
-        
-        # Estimate time based on rate limits
-        estimated_batches = max(1, total_tokens // 8000)  # Conservative batch size
-        estimated_time_seconds = estimated_batches * 1.0  # 1 second per batch
-        
-        # Check if data is too large
-        is_large_dataset = total_tokens > 100000  # 100k tokens threshold
-        
-        return {
-            "total_chunks": len(chunks),
-            "total_tokens": total_tokens,
-            "estimated_batches": estimated_batches,
-            "estimated_time_seconds": estimated_time_seconds,
-            "is_large_dataset": is_large_dataset,
-            "warning": "Large dataset detected - processing may take several minutes" if is_large_dataset else None
-        }
-    
     async def process_user_data(self, user_id: str, text_data: str) -> bool:
         """Process user text data: chunk, embed, and store"""
         try:

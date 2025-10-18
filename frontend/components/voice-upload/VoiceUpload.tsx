@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -12,26 +10,32 @@ import {
   Pause,
   X,
 } from "lucide-react";
-import { useRouter, useParams } from "next/navigation";
-import toast from "react-hot-toast";
 import { useDropzone } from "react-dropzone";
+import toast from "react-hot-toast";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Alert } from "@/components/ui/Alert";
 
-// API utility functions
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+interface VoiceUploadProps {
+  userId: string;
+  onUpload: (file: File) => Promise<void>;
+  onSkip: () => void;
+  isUploading: boolean;
+  uploadStatus: "idle" | "success" | "error";
+}
 
-export default function VoiceUploadPage() {
-  const params = useParams();
-  const userId = params.userId as string;
+export function VoiceUpload({
+  userId,
+  onUpload,
+  onSkip,
+  isUploading,
+  uploadStatus,
+}: VoiceUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState<
-    "idle" | "success" | "error"
-  >("idle");
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const router = useRouter();
 
   const onDrop = (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -53,7 +57,6 @@ export default function VoiceUploadPage() {
       // Create audio URL for preview
       const url = URL.createObjectURL(file);
       setAudioUrl(url);
-      setUploadStatus("idle");
 
       toast.success("Audio file selected successfully!");
     }
@@ -74,7 +77,6 @@ export default function VoiceUploadPage() {
       URL.revokeObjectURL(audioUrl);
       setAudioUrl(null);
     }
-    setUploadStatus("idle");
   };
 
   const playAudio = () => {
@@ -89,54 +91,10 @@ export default function VoiceUploadPage() {
     }
   };
 
-  const uploadVoice = async () => {
-    if (!selectedFile) {
-      toast.error("No file selected");
-      return;
+  const handleUpload = async () => {
+    if (selectedFile) {
+      await onUpload(selectedFile);
     }
-
-    setIsUploading(true);
-    setUploadStatus("idle");
-
-    try {
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-
-      const response = await fetch(
-        `${API_BASE_URL}/api/voice/upload/${userId}`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.status === "success") {
-        setUploadStatus("success");
-        toast.success(
-          "Voice uploaded successfully! Training will begin shortly."
-        );
-
-        // Redirect to questionnaire after a short delay
-        setTimeout(() => {
-          router.push(`/onboarding/${userId}`);
-        }, 2000);
-      } else {
-        setUploadStatus("error");
-        toast.error(data.error || "Failed to upload voice");
-      }
-    } catch (error) {
-      console.error("Upload error:", error);
-      setUploadStatus("error");
-      toast.error("Upload failed. Please try again.");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const skipVoiceUpload = () => {
-    router.push(`/onboarding/${userId}`);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -150,11 +108,7 @@ export default function VoiceUploadPage() {
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
       <div className="max-w-2xl w-full">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-2xl p-8 shadow-lg"
-        >
+        <Card variant="glass" padding="lg">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/25">
@@ -261,69 +215,39 @@ export default function VoiceUploadPage() {
             {/* Upload Status */}
             <AnimatePresence>
               {uploadStatus === "success" && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="bg-green-900/20 border border-green-500/30 rounded-2xl p-4"
-                >
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle className="w-5 h-5 text-green-400" />
-                    <span className="text-green-300 font-medium">
-                      Voice uploaded successfully! Redirecting to
-                      questionnaire...
-                    </span>
-                  </div>
-                </motion.div>
+                <Alert type="success">
+                  Voice uploaded successfully! Redirecting to questionnaire...
+                </Alert>
               )}
 
               {uploadStatus === "error" && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="bg-red-900/20 border border-red-500/30 rounded-2xl p-4"
-                >
-                  <div className="flex items-center space-x-3">
-                    <AlertCircle className="w-5 h-5 text-red-400" />
-                    <span className="text-red-300 font-medium">
-                      Upload failed. Please try again.
-                    </span>
-                  </div>
-                </motion.div>
+                <Alert type="error">Upload failed. Please try again.</Alert>
               )}
             </AnimatePresence>
 
             {/* Action Buttons */}
             <div className="flex space-x-4">
-              <button
-                onClick={uploadVoice}
+              <Button
+                onClick={handleUpload}
                 disabled={!selectedFile || isUploading}
-                className={`flex-1 px-6 py-3 rounded-2xl font-semibold transition-all duration-200 ${
-                  !selectedFile || isUploading
-                    ? "bg-zinc-800/30 text-zinc-500 cursor-not-allowed"
-                    : "bg-gradient-to-br from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30"
-                }`}
+                className="flex-1"
               >
                 {isUploading ? (
                   <>
-                    <Loader2 className="w-5 h-5 inline mr-2 animate-spin" />
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                     Uploading...
                   </>
                 ) : (
                   <>
-                    <Upload className="w-5 h-5 inline mr-2" />
+                    <Upload className="w-5 h-5 mr-2" />
                     Upload Voice Sample
                   </>
                 )}
-              </button>
+              </Button>
 
-              <button
-                onClick={skipVoiceUpload}
-                className="px-6 py-3 bg-zinc-800/50 text-zinc-300 rounded-2xl font-semibold hover:bg-zinc-700/50 transition-all duration-200"
-              >
+              <Button variant="secondary" onClick={onSkip}>
                 Skip
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -343,8 +267,14 @@ export default function VoiceUploadPage() {
               <li>• Use a good quality microphone if available</li>
             </ul>
           </div>
-        </motion.div>
+        </Card>
       </div>
+
+      <audio
+        ref={audioRef}
+        onEnded={() => setIsPlaying(false)}
+        className="hidden"
+      />
     </div>
   );
 }

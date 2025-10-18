@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
+    "dev": "cd frontend && NEXT_NODE_MODULES_PATH=../node_modules next dev",
+    "build": "cd frontend && NEXT_NODE_MODULES_PATH=../node_modules next build",
+    "start": "cd frontend && NEXT_NODE_MODULES_PATH=../node_modules next start",
+    "lint": "cd frontend && NEXT_NODE_MODULES_PATH=../node_modules next lint",
     "backend": "cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000"
   },
   "dependencies": {

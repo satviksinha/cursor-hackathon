@@ -73,58 +73,6 @@ class Mem0Client:
                 "memories": []
             }
     
-    async def get_memory(self, memory_id: str) -> Dict[str, Any]:
-        """
-        Get a specific memory by ID
-        
-        Args:
-            memory_id: Memory ID
-            
-        Returns:
-            Memory data
-        """
-        try:
-            # Get all memories and filter by ID
-            all_memories = self.memory.get_all()
-            for memory in all_memories:
-                if memory.get("id") == memory_id:
-                    return {
-                        "success": True,
-                        "memory": memory
-                    }
-            
-            return {
-                "success": False,
-                "error": "Memory not found"
-            }
-        except Exception as e:
-            return {
-                "success": False,
-                "error": str(e)
-            }
-    
-    async def delete_memory(self, memory_id: str) -> Dict[str, Any]:
-        """
-        Delete a memory by ID
-        
-        Args:
-            memory_id: Memory ID
-            
-        Returns:
-            Deletion result
-        """
-        try:
-            result = self.memory.delete(memory_id)
-            return {
-                "success": True,
-                "message": "Memory deleted successfully"
-            }
-        except Exception as e:
-            return {
-                "success": False,
-                "error": str(e)
-            }
-    
     async def get_all_memories(self, user_id: str = "default_user") -> Dict[str, Any]:
         """
         Get all memories for a user

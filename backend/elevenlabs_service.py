@@ -125,34 +125,3 @@ class ElevenLabsService:
             logger.error(f"Streaming TTS error: {e}")
             raise
     
-    async def get_voice_info(self, voice_id: str) -> dict:
-        """Get information about a cloned voice"""
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"{self.base_url}/voices/{voice_id}",
-                    headers=self.headers
-                ) as response:
-                    if response.status == 200:
-                        return await response.json()
-                    else:
-                        error_text = await response.text()
-                        raise Exception(f"Failed to get voice info: {error_text}")
-                        
-        except Exception as e:
-            logger.error(f"Get voice info error: {e}")
-            raise
-    
-    async def delete_voice(self, voice_id: str) -> bool:
-        """Delete a cloned voice"""
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.delete(
-                    f"{self.base_url}/voices/{voice_id}",
-                    headers=self.headers
-                ) as response:
-                    return response.status == 200
-                    
-        except Exception as e:
-            logger.error(f"Delete voice error: {e}")
-            return False
