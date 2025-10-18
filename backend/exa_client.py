@@ -123,6 +123,117 @@ class ExaClient:
             General search results
         """
         return await self.search(query, num_results, "search")
+    
+    async def parallel_search(self, query: str, strategy: str, num_results: int = 3) -> Dict[str, Any]:
+        """
+        Execute search with specific strategy for parallel processing
+        
+        Args:
+            query: Search query
+            strategy: Search strategy (contrarian, academic, calming_content, etc.)
+            num_results: Number of results to return
+            
+        Returns:
+            Search results with strategy metadata
+        """
+        # Modify query based on strategy
+        strategy_queries = {
+            "contrarian": f"opposing viewpoint alternative perspective {query}",
+            "academic": f"research study academic paper {query}",
+            "calming_content": f"zen meditation mindfulness stress relief {query}",
+            "structured": f"data analysis methodology framework {query}",
+            "chaos_challenge": f"creative unconventional innovative {query}",
+            "social_trends": f"trending viral social media {query}",
+            "community": f"discussion forum community opinion {query}",
+            "deep_dive": f"comprehensive analysis detailed explanation {query}"
+        }
+        
+        modified_query = strategy_queries.get(strategy, query)
+        
+        result = await self.search(modified_query, num_results, "search")
+        result["strategy"] = strategy
+        result["original_query"] = query
+        return result
+    
+    async def contrarian_search(self, query: str, num_results: int = 3) -> Dict[str, Any]:
+        """
+        Find opposing viewpoints and contrarian perspectives
+        
+        Args:
+            query: Search query
+            num_results: Number of results to return
+            
+        Returns:
+            Contrarian search results
+        """
+        contrarian_query = f"opposing viewpoint alternative perspective criticism {query}"
+        result = await self.search(contrarian_query, num_results, "search")
+        result["strategy"] = "contrarian"
+        return result
+    
+    async def personality_mirror_search(self, query: str, personality_traits: Dict[str, float], num_results: int = 3) -> Dict[str, Any]:
+        """
+        Find content that matches user's personality profile
+        
+        Args:
+            query: Search query
+            personality_traits: User's personality scores
+            num_results: Number of results to return
+            
+        Returns:
+            Personality-matched search results
+        """
+        # Build personality-aware query
+        trait_keywords = []
+        if personality_traits.get("openness", 0) > 70:
+            trait_keywords.extend(["creative", "artistic", "innovative"])
+        if personality_traits.get("conscientiousness", 0) > 70:
+            trait_keywords.extend(["organized", "systematic", "methodical"])
+        if personality_traits.get("extraversion", 0) > 70:
+            trait_keywords.extend(["social", "community", "networking"])
+        if personality_traits.get("agreeableness", 0) > 70:
+            trait_keywords.extend(["collaborative", "supportive", "harmonious"])
+        if personality_traits.get("neuroticism", 0) > 70:
+            trait_keywords.extend(["mindfulness", "calm", "stress-management"])
+        
+        personality_query = f"{query} {' '.join(trait_keywords[:3])}"
+        result = await self.search(personality_query, num_results, "search")
+        result["strategy"] = "personality_mirror"
+        result["traits_used"] = trait_keywords[:3]
+        return result
+    
+    async def deep_dive_search(self, query: str, num_results: int = 3) -> Dict[str, Any]:
+        """
+        Multi-layer research for comprehensive understanding
+        
+        Args:
+            query: Search query
+            num_results: Number of results to return
+            
+        Returns:
+            Deep dive search results
+        """
+        deep_query = f"comprehensive analysis detailed explanation research {query}"
+        result = await self.search(deep_query, num_results, "research")
+        result["strategy"] = "deep_dive"
+        return result
+    
+    async def context_expansion_search(self, query: str, context: str, num_results: int = 3) -> Dict[str, Any]:
+        """
+        Build knowledge graph from conversation context
+        
+        Args:
+            query: Search query
+            context: Conversation context
+            num_results: Number of results to return
+            
+        Returns:
+            Context-expanded search results
+        """
+        expanded_query = f"{query} related topics background context {context}"
+        result = await self.search(expanded_query, num_results, "search")
+        result["strategy"] = "context_expansion"
+        return result
 
 
 # Global instance

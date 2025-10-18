@@ -28,6 +28,14 @@ interface Message {
   timestamp: Date;
   searchResults?: any[];
   personalityContext?: string;
+  searchInsights?: string[];
+  personalityTraits?: {
+    openness: number;
+    conscientiousness: number;
+    extraversion: number;
+    agreeableness: number;
+    neuroticism: number;
+  };
 }
 
 interface PersonalityProfile {
@@ -123,7 +131,9 @@ export default function ChatPage({ params }: { params: { userId: string } }) {
     text: string,
     isUser: boolean,
     searchResults?: any[],
-    personalityContext?: string
+    personalityContext?: string,
+    searchInsights?: string[],
+    personalityTraits?: any
   ) => {
     const message: Message = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -132,6 +142,8 @@ export default function ChatPage({ params }: { params: { userId: string } }) {
       timestamp: new Date(),
       searchResults,
       personalityContext,
+      searchInsights,
+      personalityTraits,
     };
     setMessages((prev) => [...prev, message]);
   };
@@ -168,7 +180,9 @@ export default function ChatPage({ params }: { params: { userId: string } }) {
           data.response,
           false,
           data.search_results,
-          data.personality_context
+          data.personality_context,
+          data.search_insights,
+          data.personality_traits
         );
       } else {
         addMessage(
@@ -233,36 +247,33 @@ export default function ChatPage({ params }: { params: { userId: string } }) {
 
       setIsPlayingVoice(messageId);
 
-      const response = await api.textToSpeech(params.userId, text);
-      const data = await response.json();
+      // Use streaming TTS for real-time playback
+      const response = await api.textToSpeechStream(params.userId, text);
 
-      if (data.status === "success") {
-        // Convert base64 to blob and create audio URL
-        const audioBlob = new Blob(
-          [Uint8Array.from(atob(data.audio_data), (c) => c.charCodeAt(0))],
-          { type: "audio/mpeg" }
-        );
-
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-        audioRef.current = audio;
-
-        audio.onended = () => {
-          setIsPlayingVoice(null);
-          URL.revokeObjectURL(audioUrl);
-        };
-
-        audio.onerror = () => {
-          setIsPlayingVoice(null);
-          URL.revokeObjectURL(audioUrl);
-          toast.error("Failed to play voice");
-        };
-
-        await audio.play();
-      } else {
-        setIsPlayingVoice(null);
-        toast.error("Failed to generate voice");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      // Create audio from streaming response
+      const audioBlob = new Blob([await response.arrayBuffer()], {
+        type: "audio/mpeg",
+      });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+
+      audio.onended = () => {
+        setIsPlayingVoice(null);
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      audio.onerror = () => {
+        setIsPlayingVoice(null);
+        URL.revokeObjectURL(audioUrl);
+        toast.error("Failed to play voice");
+      };
+
+      await audio.play();
     } catch (error) {
       console.error("Voice playback error:", error);
       setIsPlayingVoice(null);
@@ -407,35 +418,128 @@ export default function ChatPage({ params }: { params: { userId: string } }) {
                       </div>
                       <p className="whitespace-pre-wrap">{message.text}</p>
 
-                      {/* Search Results */}
+                      {/* Enhanced Search Results */}
                       {message.searchResults &&
                         message.searchResults.length > 0 && (
                           <div className="mt-3 pt-3 border-t border-white/20">
-                            <div className="flex items-center space-x-2 mb-2">
+                            <div className="flex items-center space-x-2 mb-3">
                               <Search className="w-4 h-4 text-purple-300" />
                               <span className="text-sm font-medium text-purple-300">
-                                Found {message.searchResults.length} relevant
-                                sources:
+                                Research Context
                               </span>
                             </div>
-                            <div className="space-y-2">
-                              {message.searchResults
-                                .slice(0, 2)
-                                .map((result, index) => (
+
+                            {/* Search Insights */}
+                            {message.searchInsights &&
+                              message.searchInsights.length > 0 && (
+                                <div className="mb-3 p-2 bg-purple-500/10 rounded-lg">
+                                  <p className="text-xs text-purple-200 mb-1">
+                                    Why these searches were triggered:
+                                  </p>
+                                  {message.searchInsights.map(
+                                    (insight, index) => (
+                                      <p
+                                        key={index}
+                                        className="text-xs text-purple-300"
+                                      >
+                                        • {insight}
+                                      </p>
+                                    )
+                                  )}
+                                </div>
+                              )}
+
+                            {/* Categorized Search Results */}
+                            <div className="space-y-3">
+                              {message.searchResults.map(
+                                (searchGroup, groupIndex) => (
                                   <div
-                                    key={index}
-                                    className="bg-white/10 rounded-lg p-2"
+                                    key={groupIndex}
+                                    className="bg-white/5 rounded-lg p-3"
                                   >
-                                    <p className="text-sm font-medium text-purple-200">
-                                      {result.title || "Untitled"}
-                                    </p>
-                                    <p className="text-xs text-white/70 line-clamp-2">
-                                      {result.text ||
-                                        result.description ||
-                                        "No description available"}
-                                    </p>
+                                    <div className="flex items-center space-x-2 mb-2">
+                                      <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full"></div>
+                                      <span className="text-sm font-medium text-purple-200">
+                                        {searchGroup.strategy
+                                          .replace("_", " ")
+                                          .replace(/\b\w/g, (l: string) =>
+                                            l.toUpperCase()
+                                          )}
+                                      </span>
+                                      {message.personalityTraits && (
+                                        <div className="flex space-x-1">
+                                          {searchGroup.strategy ===
+                                            "contrarian" &&
+                                            message.personalityTraits.openness >
+                                              70 && (
+                                              <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 text-xs rounded">
+                                                High Openness
+                                              </span>
+                                            )}
+                                          {searchGroup.strategy ===
+                                            "calming_content" &&
+                                            message.personalityTraits
+                                              .neuroticism > 70 && (
+                                              <span className="px-1.5 py-0.5 bg-red-500/20 text-red-300 text-xs rounded">
+                                                High Neuroticism
+                                              </span>
+                                            )}
+                                          {searchGroup.strategy ===
+                                            "structured" &&
+                                            message.personalityTraits
+                                              .conscientiousness > 70 && (
+                                              <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-300 text-xs rounded">
+                                                High Conscientiousness
+                                              </span>
+                                            )}
+                                          {searchGroup.strategy ===
+                                            "social_trends" &&
+                                            message.personalityTraits
+                                              .extraversion > 70 && (
+                                              <span className="px-1.5 py-0.5 bg-green-500/20 text-green-300 text-xs rounded">
+                                                High Extraversion
+                                              </span>
+                                            )}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="space-y-2">
+                                      {searchGroup.results
+                                        .slice(0, 2)
+                                        .map(
+                                          (
+                                            result: any,
+                                            resultIndex: number
+                                          ) => (
+                                            <div
+                                              key={resultIndex}
+                                              className="bg-white/5 rounded p-2"
+                                            >
+                                              <p className="text-sm font-medium text-purple-200 mb-1">
+                                                {result.title || "Untitled"}
+                                              </p>
+                                              <p className="text-xs text-white/70 line-clamp-2">
+                                                {result.text ||
+                                                  result.description ||
+                                                  "No description available"}
+                                              </p>
+                                              {result.url && (
+                                                <a
+                                                  href={result.url}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="text-xs text-purple-400 hover:text-purple-300 mt-1 inline-block"
+                                                >
+                                                  View source →
+                                                </a>
+                                              )}
+                                            </div>
+                                          )
+                                        )}
+                                    </div>
                                   </div>
-                                ))}
+                                )
+                              )}
                             </div>
                           </div>
                         )}
@@ -461,9 +565,44 @@ export default function ChatPage({ params }: { params: { userId: string } }) {
                   <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
                     <Brain className="w-4 h-4 text-white" />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Loader2 className="w-4 h-4 text-white animate-spin" />
-                    <span className="text-white">Thinking...</span>
+                  <div className="flex flex-col space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="w-4 h-4 text-white animate-spin" />
+                      <span className="text-white">Thinking...</span>
+                    </div>
+                    {personalityProfile && (
+                      <div className="text-xs text-purple-300">
+                        {personalityProfile.profile.openness > 70 && (
+                          <p>
+                            • Searching contrarian viewpoints (High Openness:{" "}
+                            {personalityProfile.profile.openness.toFixed(1)})
+                          </p>
+                        )}
+                        {personalityProfile.profile.neuroticism > 70 && (
+                          <p>
+                            • Finding calming content (High Neuroticism:{" "}
+                            {personalityProfile.profile.neuroticism.toFixed(1)})
+                          </p>
+                        )}
+                        {personalityProfile.profile.conscientiousness > 70 && (
+                          <p>
+                            • Gathering structured data (High Conscientiousness:{" "}
+                            {personalityProfile.profile.conscientiousness.toFixed(
+                              1
+                            )}
+                            )
+                          </p>
+                        )}
+                        {personalityProfile.profile.extraversion > 70 && (
+                          <p>
+                            • Checking social trends (High Extraversion:{" "}
+                            {personalityProfile.profile.extraversion.toFixed(1)}
+                            )
+                          </p>
+                        )}
+                        <p>• Analyzing personality-driven insights...</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

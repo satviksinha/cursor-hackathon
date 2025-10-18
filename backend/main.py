@@ -556,69 +556,141 @@ async def personalized_chat(user_id: str, chat_message: PersonalizedChatMessage)
                 Adjust your response style and content recommendations based on these traits.
                 """
         
-        # If user wants search, perform personality-based search
-        search_results = None
-        if chat_message.include_search:
-            # Determine search type based on personality
-            if profile_result.get("memories"):
-                try:
-                    profile_data = json.loads(profile_json)
-                    openness = profile_data['profile']['openness']
-                    extraversion = profile_data['profile']['extraversion']
-                    conscientiousness = profile_data['profile']['conscientiousness']
-                    
-                    # Choose search type based on personality
-                    if openness >= 70:
-                        # High openness - prefer research papers
-                        search_results = await exa_client.research_search(
-                            query=chat_message.message,
-                            num_results=3
-                        )
-                    elif extraversion >= 70:
-                        # High extraversion - prefer news and social content
-                        search_results = await exa_client.news_search(
-                            query=chat_message.message,
-                            num_results=3
-                        )
-                    elif conscientiousness >= 70:
-                        # High conscientiousness - prefer structured content
-                        search_results = await exa_client.general_search(
-                            query=chat_message.message,
+        # Always perform personality-driven parallel searches (not optional)
+        all_search_results = []
+        search_insights = []
+        
+        if profile_data:
+            import asyncio
+            
+            # Determine search strategies based on personality
+            search_strategies = []
+            personality_traits = {
+                "openness": profile_data.get("openness", 0),
+                "conscientiousness": profile_data.get("conscientiousness", 0),
+                "extraversion": profile_data.get("extraversion", 0),
+                "agreeableness": profile_data.get("agreeableness", 0),
+                "neuroticism": profile_data.get("neuroticism", 0)
+            }
+            
+            # Always include basic search
+            search_strategies.append(("supporting", "general"))
+            
+            # Add personality-driven strategies
+            if personality_traits["openness"] >= 70:
+                search_strategies.extend([
+                    ("contrarian", "contrarian"),
+                    ("academic", "academic"),
+                    ("deep_dive", "deep_dive")
+                ])
+                search_insights.append(f"High Openness ({personality_traits['openness']:.1f}): Including contrarian viewpoints and academic research")
+            
+            if personality_traits["neuroticism"] >= 70:
+                search_strategies.append(("calming_content", "calming_content"))
+                search_insights.append(f"High Neuroticism ({personality_traits['neuroticism']:.1f}): Including stress relief and mindfulness content")
+            
+            if personality_traits["conscientiousness"] >= 70:
+                search_strategies.extend([
+                    ("structured", "structured"),
+                    ("chaos_challenge", "chaos_challenge")
+                ])
+                search_insights.append(f"High Conscientiousness ({personality_traits['conscientiousness']:.1f}): Including structured data and creative challenges")
+            
+            if personality_traits["extraversion"] >= 70:
+                search_strategies.extend([
+                    ("social_trends", "social_trends"),
+                    ("community", "community")
+                ])
+                search_insights.append(f"High Extraversion ({personality_traits['extraversion']:.1f}): Including social trends and community discussions")
+            
+            if personality_traits["agreeableness"] >= 70:
+                search_strategies.append(("multiple_perspectives", "general"))
+                search_insights.append(f"High Agreeableness ({personality_traits['agreeableness']:.1f}): Including multiple perspectives")
+            
+            # Limit to max 5 parallel searches
+            search_strategies = search_strategies[:5]
+            
+            # Execute parallel searches
+            try:
+                search_tasks = []
+                for strategy_name, strategy_type in search_strategies:
+                    if strategy_type == "personality_mirror":
+                        task = exa_client.personality_mirror_search(
+                            chat_message.message, 
+                            personality_traits, 
                             num_results=3
                         )
                     else:
-                        # Default to general search
-                        search_results = await exa_client.general_search(
-                            query=chat_message.message,
+                        task = exa_client.parallel_search(
+                            chat_message.message, 
+                            strategy_type, 
                             num_results=3
                         )
-                except Exception as search_error:
-                    logger.warning(f"Search failed: {search_error}")
+                    search_tasks.append(task)
+                
+                # Execute all searches in parallel
+                search_results_list = await asyncio.gather(*search_tasks, return_exceptions=True)
+                
+                # Process results and categorize them
+                for i, result in enumerate(search_results_list):
+                    if isinstance(result, Exception):
+                        logger.warning(f"Search {i} failed: {result}")
+                        continue
+                    
+                    if result.get("success") and result.get("results"):
+                        strategy_name = search_strategies[i][0]
+                        all_search_results.append({
+                            "strategy": strategy_name,
+                            "results": result["results"],
+                            "query": result.get("query", chat_message.message),
+                            "strategy_type": result.get("strategy", strategy_name)
+                        })
+                
+            except Exception as search_error:
+                logger.warning(f"Parallel search failed: {search_error}")
+                # Fallback to basic search
+                try:
+                    basic_result = await exa_client.general_search(chat_message.message, num_results=3)
+                    if basic_result.get("success"):
+                        all_search_results.append({
+                            "strategy": "supporting",
+                            "results": basic_result["results"],
+                            "query": chat_message.message,
+                            "strategy_type": "general"
+                        })
+                except Exception as fallback_error:
+                    logger.warning(f"Fallback search failed: {fallback_error}")
         
         # Generate response using OpenAI with personality context
         from openai import AsyncOpenAI
         openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         
-        system_prompt = f"""You are a personalized AI assistant. {personality_context}
+        # Build enhanced system prompt with search insights
+        search_context = ""
+        if all_search_results:
+            search_context = "\n\nI've automatically searched for diverse perspectives based on your personality:\n"
+            for insight in search_insights:
+                search_context += f"- {insight}\n"
+            
+            search_context += "\nSearch results by category:\n"
+            for search_group in all_search_results:
+                strategy = search_group["strategy"]
+                results = search_group["results"][:2]  # Limit to 2 results per strategy
+                search_context += f"\n{strategy.replace('_', ' ').title()}:\n"
+                for result in results:
+                    search_context += f"- {result.get('title', 'No title')}: {result.get('text', 'No description')[:200]}...\n"
         
-        Respond to the user's message in a way that matches their personality profile.
-        If search results are provided, incorporate relevant information from them.
-        Be conversational and helpful."""
+        system_prompt = f"""You are a personalized AI assistant. {personality_context}{search_context}
+
+Respond to the user's message in a way that matches their personality profile.
+Weave the diverse search insights naturally into your response. Challenge the user's 
+perspective when appropriate based on their personality profile. Reference specific 
+sources when relevant. Be conversational and helpful."""
         
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": chat_message.message}
         ]
-        
-        if search_results and search_results.get("results"):
-            search_context = "\n".join([
-                f"- {result.get('title', 'No title')}: {result.get('text', 'No description')}"
-                for result in search_results["results"][:3]
-            ])
-            messages.append({
-                "role": "system", 
-                "content": f"Relevant search results:\n{search_context}"
-            })
         
         response = await openai_client.chat.completions.create(
             model="gpt-4o-mini",
@@ -633,8 +705,10 @@ async def personalized_chat(user_id: str, chat_message: PersonalizedChatMessage)
             "status": "success",
             "response": assistant_message,
             "personality_context": personality_context,
-            "search_performed": chat_message.include_search,
-            "search_results": search_results.get("results", []) if search_results else []
+            "search_performed": True,
+            "search_results": all_search_results,
+            "search_insights": search_insights,
+            "personality_traits": personality_traits if profile_data else {}
         }
         
     except Exception as e:
@@ -688,6 +762,52 @@ async def text_to_speech(user_id: str, request: dict):
         
     except Exception as e:
         logger.error(f"Text-to-speech error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/text-to-speech-stream/{user_id}")
+async def text_to_speech_stream(user_id: str, request: dict):
+    """Stream text to speech using user's cloned voice for real-time playback"""
+    try:
+        logger.info(f"Streaming TTS request for user {user_id}")
+        
+        text = request.get("text", "")
+        if not text:
+            logger.error("No text provided in request")
+            raise HTTPException(status_code=400, detail="Text is required")
+        
+        # Get user's voice ID from training job
+        training_job = await supabase_client.get_user_training_job(user_id)
+        if not training_job or not training_job.get("voice_id"):
+            raise HTTPException(status_code=404, detail="User voice not found. Please complete voice training first.")
+        
+        voice_id = training_job["voice_id"]
+        logger.info(f"Streaming TTS with voice_id: {voice_id}")
+        
+        # Create a streaming response
+        from fastapi.responses import StreamingResponse
+        import asyncio
+        
+        async def generate_audio_stream():
+            try:
+                async for chunk in elevenlabs_service.text_to_speech_stream(text, voice_id):
+                    yield chunk
+            except Exception as e:
+                logger.error(f"Streaming TTS error: {e}")
+                # Send error as audio chunk (empty chunk to signal error)
+                yield b""
+        
+        return StreamingResponse(
+            generate_audio_stream(),
+            media_type="audio/mpeg",
+            headers={
+                "Content-Disposition": "inline",
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive"
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Streaming TTS error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/debug/memories/{user_id}")
