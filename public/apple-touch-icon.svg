@@ -1,0 +1,45 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brainGradient180" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="neuralGradient180" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A855F7;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle with rounded corners for iOS -->
+  <rect x="0" y="0" width="180" height="180" rx="40" ry="40" fill="#1F2937"/>
+  <rect x="5" y="5" width="170" height="170" rx="35" ry="35" fill="none" stroke="url(#brainGradient180)" stroke-width="3"/>
+  
+  <!-- Brain outline -->
+  <path d="M45 68C45 45, 56 34, 79 34C90 34, 101 39, 112 45C123 51, 135 62, 135 79C135 90, 129 101, 118 107C123 113, 129 124, 129 135C129 146, 118 157, 107 157C96 157, 84 146, 79 135C74 140, 62 146, 51 146C40 146, 34 135, 34 124C34 113, 40 101, 45 90C45 84, 45 76, 45 68Z" 
+        fill="url(#brainGradient180)" opacity="0.9"/>
+  
+  <!-- Neural network nodes -->
+  <circle cx="68" cy="56" r="8" fill="url(#neuralGradient180)"/>
+  <circle cx="112" cy="56" r="8" fill="url(#neuralGradient180)"/>
+  <circle cx="90" cy="79" r="8" fill="url(#neuralGradient180)"/>
+  <circle cx="56" cy="101" r="8" fill="url(#neuralGradient180)"/>
+  <circle cx="124" cy="101" r="8" fill="url(#neuralGradient180)"/>
+  <circle cx="90" cy="124" r="8" fill="url(#neuralGradient180)"/>
+  
+  <!-- Neural network connections -->
+  <line x1="68" y1="56" x2="90" y2="79" stroke="url(#neuralGradient180)" stroke-width="4" opacity="0.7"/>
+  <line x1="112" y1="56" x2="90" y2="79" stroke="url(#neuralGradient180)" stroke-width="4" opacity="0.7"/>
+  <line x1="90" y1="79" x2="56" y2="101" stroke="url(#neuralGradient180)" stroke-width="4" opacity="0.7"/>
+  <line x1="90" y1="79" x2="124" y2="101" stroke="url(#neuralGradient180)" stroke-width="4" opacity="0.7"/>
+  <line x1="56" y1="101" x2="90" y2="124" stroke="url(#neuralGradient180)" stroke-width="4" opacity="0.7"/>
+  <line x1="124" y1="101" x2="90" y2="124" stroke="url(#neuralGradient180)" stroke-width="4" opacity="0.7"/>
+  
+  <!-- Central processing node -->
+  <circle cx="90" cy="90" r="11" fill="#F8FAFC" opacity="0.9"/>
+  <circle cx="90" cy="90" r="6" fill="url(#brainGradient180)"/>
+  
+  <!-- Additional neural connections for complexity -->
+  <line x1="68" y1="56" x2="56" y2="101" stroke="url(#neuralGradient180)" stroke-width="2" opacity="0.5"/>
+  <line x1="112" y1="56" x2="124" y2="101" stroke="url(#neuralGradient180)" stroke-width="2" opacity="0.5"/>
+  <line x1="56" y1="101" x2="124" y2="101" stroke="url(#neuralGradient180)" stroke-width="2" opacity="0.5"/>
+</svg>
