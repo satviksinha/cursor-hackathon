@@ -38,20 +38,14 @@ class ExaClient:
             "x-api-key": self.api_key
         }
         
-        # Different endpoints for different search types
-        endpoint_map = {
-            "search": "/search",
-            "news": "/search",
-            "research": "/search"
-        }
-        
-        endpoint = endpoint_map.get(search_type, "/search")
+        # All search types use the same endpoint
+        endpoint = "/search"
         
         payload = {
             "query": query,
             "numResults": num_results,
             "type": search_type,
-            "useAutoprompt": True
+            "text": True
         }
         
         try:

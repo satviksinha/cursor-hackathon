@@ -560,6 +560,26 @@ async def extract_and_store_preferences(user_id: str, user_message: str, assista
         logger.error(f"Preference extraction error: {e}")
         raise
 
+@app.post("/api/exa/search")
+async def exa_search(request: dict):
+    """Search using Exa.ai for live browser"""
+    try:
+        query = request.get("query", "")
+        num_results = request.get("num_results", 5)
+        search_type = request.get("search_type", "auto")
+        
+        if not query:
+            raise HTTPException(status_code=400, detail="Query is required")
+        
+        # Use exa_client to search
+        result = await exa_client.search(query, num_results, search_type)
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Exa search error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/chat/personalized/{user_id}")
 async def personalized_chat(user_id: str, chat_message: PersonalizedChatMessage):
     """Send a personalized chat message based on user's personality profile"""

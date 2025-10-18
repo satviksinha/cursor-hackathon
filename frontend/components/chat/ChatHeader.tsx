@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { MessageCircle, Settings, Volume2, VolumeX } from "lucide-react";
+import { MessageCircle, Settings, Volume2, VolumeX, Globe } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 interface ChatHeaderProps {
@@ -7,6 +7,7 @@ interface ChatHeaderProps {
   isAudioEnabled: boolean;
   onToggleAudio: () => void;
   onSettingsClick: () => void;
+  onBrowserClick?: () => void;
 }
 
 export function ChatHeader({
@@ -14,6 +15,7 @@ export function ChatHeader({
   isAudioEnabled,
   onToggleAudio,
   onSettingsClick,
+  onBrowserClick,
 }: ChatHeaderProps) {
   return (
     <div className="bg-zinc-900/80 backdrop-blur-xl border-b border-zinc-800/50 p-6">
@@ -33,6 +35,16 @@ export function ChatHeader({
         </div>
 
         <div className="flex items-center space-x-3">
+          {onBrowserClick && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBrowserClick}
+              className="p-2"
+            >
+              <Globe className="w-5 h-5 text-zinc-400" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"

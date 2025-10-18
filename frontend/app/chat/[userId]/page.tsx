@@ -9,6 +9,7 @@ import { ChatHeader } from "@/components/chat/ChatHeader";
 import { Message } from "@/components/chat/Message";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { PersonalitySidebar } from "@/components/chat/PersonalitySidebar";
+import { LiveBrowser } from "@/components/chat/LiveBrowser";
 import { Alert } from "@/components/ui/Alert";
 
 interface Message {
@@ -53,6 +54,8 @@ export default function ChatPage() {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [showPersonalitySidebar, setShowPersonalitySidebar] = useState(false);
   const [isPlayingVoice, setIsPlayingVoice] = useState<string | null>(null);
+  const [showLiveBrowser, setShowLiveBrowser] = useState(false);
+  const [browserSearchQuery, setBrowserSearchQuery] = useState("");
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -115,6 +118,9 @@ export default function ChatPage() {
           searchInsights: data.search_insights,
           personalityTraits: personalityProfile?.profile,
         });
+
+        // Check if the message contains searchable topics and open browser
+        checkForSearchableTopics(messageText, data.response);
       } else {
         const errorData = await response.json();
         toast.error(errorData.detail || "Failed to send message");
@@ -155,6 +161,102 @@ export default function ChatPage() {
     audioRef.current = null;
   };
 
+  const checkForSearchableTopics = (
+    userMessage: string,
+    aiResponse: string
+  ) => {
+    // Keywords that suggest the user wants to search for something
+    const searchKeywords = [
+      "favorite books",
+      "best books",
+      "recommend books",
+      "book recommendations",
+      "movies",
+      "films",
+      "watch",
+      "streaming",
+      "netflix",
+      "disney",
+      "music",
+      "songs",
+      "artists",
+      "albums",
+      "playlist",
+      "restaurants",
+      "food",
+      "recipes",
+      "cooking",
+      "dining",
+      "travel",
+      "places to visit",
+      "destinations",
+      "hotels",
+      "products",
+      "buy",
+      "purchase",
+      "shopping",
+      "amazon",
+      "news",
+      "latest",
+      "current events",
+      "trending",
+      "tutorials",
+      "how to",
+      "learn",
+      "courses",
+      "education",
+      "games",
+      "gaming",
+      "reviews",
+      "tech",
+      "technology",
+    ];
+
+    const combinedText = `${userMessage} ${aiResponse}`.toLowerCase();
+
+    // Check if any search keywords are mentioned
+    const foundKeywords = searchKeywords.filter((keyword) =>
+      combinedText.includes(keyword.toLowerCase())
+    );
+
+    if (foundKeywords.length > 0) {
+      // Extract the most relevant search query
+      let searchQuery = "";
+
+      // Try to extract specific terms from the message
+      if (combinedText.includes("books")) {
+        searchQuery = userMessage.includes("favorite")
+          ? "best books recommendations"
+          : "book recommendations";
+      } else if (
+        combinedText.includes("movies") ||
+        combinedText.includes("films")
+      ) {
+        searchQuery = "best movies to watch";
+      } else if (combinedText.includes("music")) {
+        searchQuery = "popular music artists";
+      } else if (
+        combinedText.includes("restaurants") ||
+        combinedText.includes("food")
+      ) {
+        searchQuery = "best restaurants near me";
+      } else if (combinedText.includes("travel")) {
+        searchQuery = "best travel destinations";
+      } else {
+        // Use the user's message as search query
+        searchQuery = userMessage;
+      }
+
+      setBrowserSearchQuery(searchQuery);
+      setShowLiveBrowser(true);
+
+      // Show a toast notification
+      toast.success("🔍 Opening live browser to search for that!", {
+        duration: 3000,
+      });
+    }
+  };
+
   const handleToggleAudio = () => {
     setVoiceEnabled(!voiceEnabled);
     if (voiceEnabled && isPlayingVoice) {
@@ -169,12 +271,17 @@ export default function ChatPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-white flex">
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div
+        className={`flex flex-col transition-all duration-300 ${
+          showLiveBrowser ? "w-1/2" : "flex-1"
+        }`}
+      >
         <ChatHeader
           userName="Your AI Assistant"
           isAudioEnabled={voiceEnabled}
           onToggleAudio={handleToggleAudio}
           onSettingsClick={handleSettingsClick}
+          onBrowserClick={() => setShowLiveBrowser(!showLiveBrowser)}
         />
 
         {/* Messages */}
@@ -232,6 +339,19 @@ export default function ChatPage() {
           disabled={!personalityProfile}
         />
       </div>
+
+      {/* Live Browser Panel */}
+      {showLiveBrowser && (
+        <div className="w-1/2 border-l border-zinc-800/50">
+          <LiveBrowser
+            isOpen={true}
+            onClose={() => setShowLiveBrowser(false)}
+            searchQuery={browserSearchQuery}
+            autoSearch={true}
+            embedded={true}
+          />
+        </div>
+      )}
 
       {/* Personality Sidebar */}
       {showPersonalitySidebar && (
