@@ -12,6 +12,10 @@ import {
   Settings,
   BarChart3,
   RefreshCw,
+  Volume2,
+  VolumeX,
+  Play,
+  Pause,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -47,7 +51,10 @@ export default function ChatPage({ params }: { params: { userId: string } }) {
     useState<PersonalityProfile | null>(null);
   const [showPersonalitySidebar, setShowPersonalitySidebar] = useState(false);
   const [includeSearch, setIncludeSearch] = useState(true);
+  const [isPlayingVoice, setIsPlayingVoice] = useState<string | null>(null);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     fetchPersonalityProfile();
@@ -214,6 +221,63 @@ export default function ChatPage({ params }: { params: { userId: string } }) {
     return "Low";
   };
 
+  const playVoice = async (messageId: string, text: string) => {
+    if (!voiceEnabled) return;
+
+    try {
+      // Stop any currently playing audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+
+      setIsPlayingVoice(messageId);
+
+      const response = await api.textToSpeech(params.userId, text);
+      const data = await response.json();
+
+      if (data.status === "success") {
+        // Convert base64 to blob and create audio URL
+        const audioBlob = new Blob(
+          [Uint8Array.from(atob(data.audio_data), (c) => c.charCodeAt(0))],
+          { type: "audio/mpeg" }
+        );
+
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audioRef.current = audio;
+
+        audio.onended = () => {
+          setIsPlayingVoice(null);
+          URL.revokeObjectURL(audioUrl);
+        };
+
+        audio.onerror = () => {
+          setIsPlayingVoice(null);
+          URL.revokeObjectURL(audioUrl);
+          toast.error("Failed to play voice");
+        };
+
+        await audio.play();
+      } else {
+        setIsPlayingVoice(null);
+        toast.error("Failed to generate voice");
+      }
+    } catch (error) {
+      console.error("Voice playback error:", error);
+      setIsPlayingVoice(null);
+      toast.error("Voice playback failed");
+    }
+  };
+
+  const stopVoice = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setIsPlayingVoice(null);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex">
       {/* Main Chat Area */}
@@ -237,6 +301,21 @@ export default function ChatPage({ params }: { params: { userId: string } }) {
               </div>
             </div>
             <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setVoiceEnabled(!voiceEnabled)}
+                className={`p-2 rounded-lg transition-colors ${
+                  voiceEnabled
+                    ? "bg-purple-500/30 hover:bg-purple-500/40"
+                    : "bg-white/20 hover:bg-white/30"
+                }`}
+                title={voiceEnabled ? "Disable Voice" : "Enable Voice"}
+              >
+                {voiceEnabled ? (
+                  <Volume2 className="w-5 h-5 text-white" />
+                ) : (
+                  <VolumeX className="w-5 h-5 text-white" />
+                )}
+              </button>
               <button
                 onClick={() => fetchPersonalityProfile()}
                 className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
@@ -298,9 +377,34 @@ export default function ChatPage({ params }: { params: { userId: string } }) {
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium mb-1">
-                        {message.isUser ? "You" : "Assistant"}
-                      </p>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-sm font-medium">
+                          {message.isUser ? "You" : "Assistant"}
+                        </p>
+                        {!message.isUser && voiceEnabled && (
+                          <div className="flex items-center space-x-2">
+                            {isPlayingVoice === message.id ? (
+                              <button
+                                onClick={stopVoice}
+                                className="p-1 bg-red-500/20 hover:bg-red-500/30 rounded transition-colors"
+                                title="Stop Voice"
+                              >
+                                <Pause className="w-3 h-3 text-red-300" />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() =>
+                                  playVoice(message.id, message.text)
+                                }
+                                className="p-1 bg-purple-500/20 hover:bg-purple-500/30 rounded transition-colors"
+                                title="Play Voice"
+                              >
+                                <Play className="w-3 h-3 text-purple-300" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       <p className="whitespace-pre-wrap">{message.text}</p>
 
                       {/* Search Results */}

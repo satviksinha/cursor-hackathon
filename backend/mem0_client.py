@@ -59,8 +59,8 @@ class Mem0Client:
             Search results
         """
         try:
-            # Search memories using the correct API with filters
-            results = self.memory.search(query, user_id=user_id, filters={'user_id': user_id})
+            # Search memories using the correct API with required filters
+            results = self.memory.search(query, user_id=user_id, filters={"user_id": user_id})
             
             return {
                 "success": True,
@@ -136,7 +136,7 @@ class Mem0Client:
             All memories
         """
         try:
-            memories = self.memory.get_all(user_id=user_id, filters={'user_id': user_id})
+            memories = self.memory.get_all(user_id=user_id, filters={"user_id": user_id})
             return {
                 "success": True,
                 "memories": memories.get("results", [])

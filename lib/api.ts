@@ -17,4 +17,10 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(message),
     }),
+  textToSpeech: (userId: string, text: string) =>
+    fetch(`${API_BASE_URL}/api/text-to-speech/${userId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    }),
 };

@@ -419,47 +419,52 @@ async def get_personality_profile(user_id: str):
     """Get user's personality profile from memory"""
     try:
         # Search for user's personality profile in mem0
+        logger.info(f"Searching for personality profile for user: {user_id}")
         search_result = await mem0_client.search_memory(
-            query=f"demo-user Openness Conscientiousness Extraversion Agreeableness Neuroticism",
+            query=f"{user_id} Openness Conscientiousness Extraversion Agreeableness Neuroticism",
             limit=10,
             user_id=user_id
         )
         
+        logger.info(f"Search result: {search_result}")
+        
         if not search_result.get("memories"):
+            logger.warning(f"No memories found for user {user_id}")
             raise HTTPException(status_code=404, detail="Personality profile not found")
         
-        # Parse the stored profile from individual memories
+        # Parse the stored profile from memory
         profile_data = {}
         for memory in search_result["memories"]:
             memory_content = memory.get("memory", "")
-            if "Openness" in memory_content and "%" in memory_content:
-                # Handle format: "demo-user Openness 118.75%"
+            
+            # Handle individual trait memories
+            if "Openness is" in memory_content:
                 try:
-                    openness_str = memory_content.split("Openness ")[1].split("%")[0]
+                    openness_str = memory_content.split("Openness is ")[1].strip()
                     profile_data["openness"] = float(openness_str)
                 except (IndexError, ValueError):
                     pass
-            elif "Conscientiousness" in memory_content and "%" in memory_content:
+            elif "Conscientiousness is" in memory_content:
                 try:
-                    conscientiousness_str = memory_content.split("Conscientiousness ")[1].split("%")[0]
+                    conscientiousness_str = memory_content.split("Conscientiousness is ")[1].strip()
                     profile_data["conscientiousness"] = float(conscientiousness_str)
                 except (IndexError, ValueError):
                     pass
-            elif "Extraversion" in memory_content and "%" in memory_content:
+            elif "Extraversion is" in memory_content:
                 try:
-                    extraversion_str = memory_content.split("Extraversion ")[1].split("%")[0]
+                    extraversion_str = memory_content.split("Extraversion is ")[1].strip()
                     profile_data["extraversion"] = float(extraversion_str)
                 except (IndexError, ValueError):
                     pass
-            elif "Agreeableness" in memory_content and "%" in memory_content:
+            elif "Agreeableness is" in memory_content:
                 try:
-                    agreeableness_str = memory_content.split("Agreeableness ")[1].split("%")[0]
+                    agreeableness_str = memory_content.split("Agreeableness is ")[1].strip()
                     profile_data["agreeableness"] = float(agreeableness_str)
                 except (IndexError, ValueError):
                     pass
             elif "Neuroticism" in memory_content and "%" in memory_content:
                 try:
-                    neuroticism_str = memory_content.split("Neuroticism ")[1].split("%")[0]
+                    neuroticism_str = memory_content.split("Neuroticism ")[1].split("%")[0].strip()
                     profile_data["neuroticism"] = float(neuroticism_str)
                 except (IndexError, ValueError):
                     pass
@@ -495,45 +500,46 @@ async def personalized_chat(user_id: str, chat_message: PersonalizedChatMessage)
     try:
         # First, get user's personality profile
         profile_result = await mem0_client.search_memory(
-            query=f"demo-user Openness Conscientiousness Extraversion Agreeableness Neuroticism",
+            query=f"{user_id} Openness Conscientiousness Extraversion Agreeableness Neuroticism",
             limit=10,
             user_id=user_id
         )
         
         personality_context = ""
         if profile_result.get("memories"):
-            # Parse personality data from individual memories
+            # Parse personality data from memory
             profile_data = {}
             for memory in profile_result["memories"]:
                 memory_content = memory.get("memory", "")
-                if "Openness" in memory_content and "%" in memory_content:
-                    # Handle format: "demo-user Openness 118.75%"
+                
+                # Handle individual trait memories
+                if "Openness is" in memory_content:
                     try:
-                        openness_str = memory_content.split("Openness ")[1].split("%")[0]
+                        openness_str = memory_content.split("Openness is ")[1].strip()
                         profile_data["openness"] = float(openness_str)
                     except (IndexError, ValueError):
                         pass
-                elif "Conscientiousness" in memory_content and "%" in memory_content:
+                elif "Conscientiousness is" in memory_content:
                     try:
-                        conscientiousness_str = memory_content.split("Conscientiousness ")[1].split("%")[0]
+                        conscientiousness_str = memory_content.split("Conscientiousness is ")[1].strip()
                         profile_data["conscientiousness"] = float(conscientiousness_str)
                     except (IndexError, ValueError):
                         pass
-                elif "Extraversion" in memory_content and "%" in memory_content:
+                elif "Extraversion is" in memory_content:
                     try:
-                        extraversion_str = memory_content.split("Extraversion ")[1].split("%")[0]
+                        extraversion_str = memory_content.split("Extraversion is ")[1].strip()
                         profile_data["extraversion"] = float(extraversion_str)
                     except (IndexError, ValueError):
                         pass
-                elif "Agreeableness" in memory_content and "%" in memory_content:
+                elif "Agreeableness is" in memory_content:
                     try:
-                        agreeableness_str = memory_content.split("Agreeableness ")[1].split("%")[0]
+                        agreeableness_str = memory_content.split("Agreeableness is ")[1].strip()
                         profile_data["agreeableness"] = float(agreeableness_str)
                     except (IndexError, ValueError):
                         pass
                 elif "Neuroticism" in memory_content and "%" in memory_content:
                     try:
-                        neuroticism_str = memory_content.split("Neuroticism ")[1].split("%")[0]
+                        neuroticism_str = memory_content.split("Neuroticism ")[1].split("%")[0].strip()
                         profile_data["neuroticism"] = float(neuroticism_str)
                     except (IndexError, ValueError):
                         pass
@@ -634,6 +640,80 @@ async def personalized_chat(user_id: str, chat_message: PersonalizedChatMessage)
     except Exception as e:
         logger.error(f"Personalized chat error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/text-to-speech/{user_id}")
+async def text_to_speech(user_id: str, request: dict):
+    """Convert text to speech using user's cloned voice"""
+    try:
+        logger.info(f"Text-to-speech request for user {user_id}")
+        logger.info(f"Request data: {request}")
+        
+        text = request.get("text", "")
+        if not text:
+            logger.error("No text provided in request")
+            raise HTTPException(status_code=400, detail="Text is required")
+        
+        # Get user's voice ID from database
+        logger.info(f"Looking up user {user_id} for voice data")
+        user = await supabase_client.get_user(user_id)
+        logger.info(f"User lookup result: {user}")
+        
+        if not user:
+            logger.error(f"User {user_id} not found in database")
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Get training job to find voice_id
+        training_job = await supabase_client.get_user_training_job(user_id)
+        logger.info(f"Training job lookup result: {training_job}")
+        
+        if not training_job or not training_job.get("voice_id"):
+            logger.error(f"User {user_id} has no voice_id in training job. Training job: {training_job}")
+            raise HTTPException(status_code=404, detail="User voice not found. Please complete voice training first.")
+        
+        voice_id = training_job["voice_id"]
+        logger.info(f"Using voice_id: {voice_id}")
+        
+        # Convert text to speech using ElevenLabs
+        audio_data = await elevenlabs_service.text_to_speech(text, voice_id)
+        
+        # Return audio data as base64 encoded string
+        import base64
+        audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+        
+        return {
+            "status": "success",
+            "audio_data": audio_base64,
+            "format": "mp3"
+        }
+        
+    except Exception as e:
+        logger.error(f"Text-to-speech error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/debug/memories/{user_id}")
+async def debug_memories(user_id: str):
+    """Debug endpoint to see all memories for a user"""
+    try:
+        # Get all memories for the user
+        all_memories = await mem0_client.get_all_memories(user_id)
+        
+        # Also try a simple search
+        search_result = await mem0_client.search_memory(
+            query=f"{user_id} personality",
+            limit=10,
+            user_id=user_id
+        )
+        
+        return {
+            "user_id": user_id,
+            "all_memories": all_memories,
+            "search_result": search_result,
+            "total_memories": len(all_memories.get("memories", [])),
+            "search_memories": len(search_result.get("memories", []))
+        }
+    except Exception as e:
+        logger.error(f"Debug memories error: {str(e)}")
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
