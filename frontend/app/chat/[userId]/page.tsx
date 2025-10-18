@@ -59,6 +59,9 @@ export default function ChatPage() {
   const [preloadedSearchResults, setPreloadedSearchResults] = useState<any[]>(
     []
   );
+  const [preloadedAudio, setPreloadedAudio] = useState<Record<string, string>>(
+    {}
+  );
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -90,15 +93,17 @@ export default function ChatPage() {
     text: string,
     isUser: boolean,
     additionalData?: Partial<Message>
-  ) => {
+  ): string => {
+    const messageId = Date.now().toString();
     const message: Message = {
-      id: Date.now().toString(),
+      id: messageId,
       text,
       isUser,
       timestamp: new Date(),
       ...additionalData,
     };
     setMessages((prev) => [...prev, message]);
+    return messageId;
   };
 
   const sendMessage = async (messageText: string) => {
@@ -115,12 +120,17 @@ export default function ChatPage() {
       if (response.ok) {
         const data = await response.json();
 
-        addMessage(data.response, false, {
+        const messageId = addMessage(data.response, false, {
           searchResults: data.search_results,
           personalityContext: data.personality_context,
           searchInsights: data.search_insights,
           personalityTraits: personalityProfile?.profile,
         });
+
+        // Pre-generate audio for immediate playback
+        if (voiceEnabled) {
+          preGenerateAudio(data.response, messageId);
+        }
 
         // Check if the message contains searchable topics and open browser
         await checkForSearchableTopics(messageText, data.response);
@@ -162,6 +172,49 @@ export default function ChatPage() {
     }
     setIsPlayingVoice(null);
     audioRef.current = null;
+  };
+
+  const preGenerateAudio = async (text: string, messageId: string) => {
+    try {
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/text-to-speech/${userId}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+
+        if (data.status === "success" && data.audio_data) {
+          // Decode base64 audio data
+          const binaryString = atob(data.audio_data);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+
+          // Create blob from decoded data
+          const audioBlob = new Blob([bytes], {
+            type: `audio/${data.format || "mp3"}`,
+          });
+          const audioUrl = URL.createObjectURL(audioBlob);
+
+          // Store the pre-generated audio URL
+          setPreloadedAudio((prev) => ({
+            ...prev,
+            [messageId]: audioUrl,
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Pre-generation audio error:", error);
+    }
   };
 
   const checkForSearchableTopics = async (
@@ -352,6 +405,7 @@ export default function ChatPage() {
               onPlayAudio={handlePlayAudio}
               onStopAudio={handleStopAudio}
               isPlaying={isPlayingVoice === message.id}
+              preloadedAudio={preloadedAudio[message.id]}
             />
           ))}
 

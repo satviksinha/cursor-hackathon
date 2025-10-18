@@ -32,6 +32,7 @@ interface MessageProps {
   onPlayAudio?: (audioData: string) => void;
   onStopAudio?: () => void;
   isPlaying?: boolean;
+  preloadedAudio?: string;
 }
 
 export function Message({
@@ -40,10 +41,18 @@ export function Message({
   onPlayAudio,
   onStopAudio,
   isPlaying,
+  preloadedAudio,
 }: MessageProps) {
   const [audioData, setAudioData] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize with preloaded audio if available
+  useEffect(() => {
+    if (preloadedAudio && !audioData) {
+      setAudioData(preloadedAudio);
+    }
+  }, [preloadedAudio, audioData]);
 
   const getTraitLevel = (score: number) => {
     if (score >= 75) return "High";
@@ -58,6 +67,21 @@ export function Message({
   };
 
   const playAudio = async () => {
+    // If we have preloaded audio, use it immediately
+    if (audioData) {
+      if (audioRef.current) {
+        if (isPlaying) {
+          audioRef.current.pause();
+          onStopAudio?.();
+        } else {
+          audioRef.current.play();
+          onPlayAudio?.(audioData);
+        }
+      }
+      return;
+    }
+
+    // If no audio data and it's not a user message, generate it
     if (!message.isUser && !audioData) {
       setIsLoadingAudio(true);
       try {
@@ -103,16 +127,6 @@ export function Message({
         console.error("Audio generation error:", error);
       } finally {
         setIsLoadingAudio(false);
-      }
-    } else if (audioData) {
-      if (audioRef.current) {
-        if (isPlaying) {
-          audioRef.current.pause();
-          onStopAudio?.();
-        } else {
-          audioRef.current.play();
-          onPlayAudio?.(audioData);
-        }
       }
     }
   };
