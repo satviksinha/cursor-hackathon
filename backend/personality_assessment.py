@@ -222,6 +222,13 @@ class BigFiveAssessment:
         """Get all questionnaire questions"""
         return self.questions
     
+    def get_question_by_id(self, question_id: str) -> Dict[str, Any]:
+        """Get a specific question by its ID"""
+        for question in self.questions:
+            if question["id"] == question_id:
+                return question
+        raise ValueError(f"Question with ID '{question_id}' not found")
+    
     def calculate_scores(self, answers: Dict[str, int]) -> PersonalityProfile:
         """
         Calculate Big Five scores from questionnaire answers
